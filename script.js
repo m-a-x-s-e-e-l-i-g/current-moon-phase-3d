@@ -1,6 +1,6 @@
-var moonTextureImage = "./img/moonTexture.jpg"; 
-var moonDisplacementImage = "./img/moon_displacement.jpg"; 
-var starsImage = "./img/stars.jpg";
+var moonTextureImage = "./img/lroc_color_poles_1k.jpg"; 
+var moonDisplacementImageLowRes = "./img/ldem_4_uint.jpg"; 
+var moonDisplacementImageHighRes = "./img/ldem_hw5x3.jpg"; 
 
 var scene = new THREE.Scene();
 
@@ -21,21 +21,18 @@ var geometry = new THREE.SphereGeometry( 2,60,60 );
 
 var textureLoader = new THREE.TextureLoader();
 var texture = textureLoader.load( moonTextureImage );
-var displacementMap = textureLoader.load( moonDisplacementImage );
-var worldTexture = textureLoader.load( starsImage );
+var displacementMap = textureLoader.load(moonDisplacementImageHighRes );
 
-var material = new THREE.MeshPhongMaterial ( 
-  { color: 0xffffff ,
+var material = new THREE.MeshPhongMaterial ({ 
+  color: 0xffffff ,
   map: texture ,
-     displacementMap: displacementMap,
+  displacementMap: displacementMap,
   displacementScale: 0.06,
   bumpMap: displacementMap,
   bumpScale: 0.04,
-   reflectivity:0, 
-   shininess :0
-  } 
-
-);
+  reflectivity: 0, 
+  shininess: 0
+});
 
 var moon = new THREE.Mesh( geometry, material );
 
@@ -51,17 +48,6 @@ hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
 hemiLight.position.set( 0, 0, 0 );
 scene.add( hemiLight );
 
-
-var worldGeometry = new THREE.SphereGeometry( 1000,60,60 );
-var worldMaterial = new THREE.MeshBasicMaterial ( 
-  { color: 0xffffff ,
-  map: worldTexture ,
-  side: THREE.BackSide
-  } 
-);
-var world = new THREE.Mesh( worldGeometry, worldMaterial );
-scene.add( world );
-
 scene.add( moon );
 camera.position.z = 5;
 
@@ -72,8 +58,6 @@ function animate() {
 	requestAnimationFrame( animate );
   moon.rotation.y += 0.0002;
   moon.rotation.x += 0;
-  world.rotation.y += 0.0
-  world.rotation.x += 0.0
 
 	renderer.render( scene, camera );
 }
