@@ -6,3 +6,4 @@ Doesn't do what it says yet. Issa WIP. 🏗️👷
 
 ## Credits
 - 3D Moon is forked from a Pen by Omar Emad: https://codepen.io/darkfo222/pen/QWdpqyQ
+- Moon texture by NASA's Scientific Visualization Studio: [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720)
