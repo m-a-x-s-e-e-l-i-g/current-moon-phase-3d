@@ -11,6 +11,7 @@
         lunarAge: number,
         lunarAgePercent: number,
         lunarDistance: number,
+        lunarLightPercent: string,
         lunationNumber: number,
         lightX: number,
         lightZ: number;
@@ -20,6 +21,7 @@
         lunarAge = Moon.lunarAge(); // Earth days since the last new moon
         lunarAgePercent = Moon.lunarAgePercent(); // Percentage of the moon's current age
         lunarDistance = Moon.lunarDistance(); // Distance to the moon measured in units of Earth radii
+        lunarLightPercent = ((1 - Math.abs(lunarAgePercent - 0.5) * 2) * 100).toFixed() + "%";
         lunationNumber = Moon.lunationNumber(); // Brown Lunation Number (BLN)
         if(hemisphere === "northern") {
             lunarPhaseEmoji = Moon.lunarPhaseEmoji();
@@ -125,6 +127,7 @@
 <p>{lunarPhase + lunarPhaseEmoji}</p>
 <p>Lunar Age: {lunarAge} days</p>
 <p>Lunar Age Percent: {lunarAgePercent}</p>
+<p>Lunar Light Percent: {lunarLightPercent}</p>
 <p>Lunar Distance: {lunarDistance}</p>
 <p>Lunation Number: {lunationNumber}</p>
 
