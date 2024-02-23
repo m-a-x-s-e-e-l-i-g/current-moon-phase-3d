@@ -10,16 +10,18 @@
         lunarAge: number, // Earth days since the last new moon
         lunarAgePercent: number, // Percentage of the moon's current age
         lunarDistance: number, // Distance to the moon measured in units of Earth radii
+        lunarDistanceKilometers: string, // Distance to the moon measured in kilometers
         lunarLightPercent: string, // How much of the moon is illuminated
         lunationNumber: number, // Brown Lunation Number (BLN)
         lightX: number, // X coordinate of the direct light source
         lightZ: number; // Z coordinate of the direct light source
 
     function updateMoonProperties(hemisphere = "northern") {
-        lunarPhase = Moon.lunarPhase();
-        lunarAge = Moon.lunarAge();
-        lunarAgePercent = Moon.lunarAgePercent();
+        lunarPhase = Moon.lunarPhase() + " Moon";
+        lunarAge = Number(Moon.lunarAge().toFixed(1));
+        lunarAgePercent = Number(Moon.lunarAgePercent().toFixed(2));
         lunarDistance = Moon.lunarDistance();
+        lunarDistanceKilometers = Math.round(lunarDistance * 6378.16).toLocaleString() + " kilometers";
         lunarLightPercent =
             ((1 - Math.abs(lunarAgePercent - 0.5) * 2) * 100).toFixed() + "%";
         lunationNumber = Moon.lunationNumber();
@@ -37,7 +39,7 @@
 
     // Call the function initially to set the properties
     updateMoonProperties();
-    setInterval(updateMoonProperties, 33);
+    setInterval(updateMoonProperties, 6000);
 
     onMount(() => {
         var moonTextureImage = "./img/lroc_color_poles_1k.jpg";
@@ -115,15 +117,57 @@
 
 <svelte:head>
     <title>{lunarPhaseEmoji} Current Moon Phase in 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 </svelte:head>
 
+<style>
+    h1, p {
+        font-family: "Space Grotesk", sans-serif;
+        text-align: center;
+        font-optical-sizing: auto;
+        font-style: normal;
+        color: #fff;
+    }
+
+    #moon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: -1
+    }
+
+    #info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 2rem;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        align-items: center;
+        align-content: center;
+    }
+
+    #info p {
+        display: inline-flex;
+    }
+    
+</style>
+
 <h1>{lunarPhaseEmoji} Current Moon Phase in 3D</h1>
-<!-- print current moon phase -->
-<p>{lunarPhase + lunarPhaseEmoji}</p>
-<p>Lunar Age: {lunarAge} days</p>
-<p>Lunar Age Percent: {lunarAgePercent}</p>
-<p>Lunar Light Percent: {lunarLightPercent}</p>
-<p>Lunar Distance: {lunarDistance}</p>
-<p>Lunation Number: {lunationNumber}</p>
+
+<div id="info">
+    <p>{lunarPhase + lunarPhaseEmoji}</p>
+    <p>Lunar Age: {lunarAge} days</p>
+    <p>Light Percent: {lunarLightPercent}</p>
+    <p>Distance: {lunarDistanceKilometers}</p>
+    <p>Lunation Number: {lunationNumber}</p>
+</div>
 
 <div id="moon"></div>
