@@ -1,24 +1,36 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Moon } from "lunarphase-js";
+    import { Hemisphere, Moon } from "lunarphase-js";
     import * as THREE from "three";
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+    const date = new Date();
 
     let lunarPhase: string,
         lunarPhaseEmoji: string,
         lunarAge: number,
         lunarAgePercent: number,
         lunarDistance: number,
-        lunationNumber: number;
+        lunationNumber: number,
+        lightX: number,
+        lightZ: number;
 
-    function updateMoonProperties() {
+    function updateMoonProperties(hemisphere = "northern") {
         lunarPhase = Moon.lunarPhase();
-        lunarPhaseEmoji = Moon.lunarPhaseEmoji();
         lunarAge = Moon.lunarAge(); // Earth days since the last new moon
         lunarAgePercent = Moon.lunarAgePercent(); // Percentage of the moon's current age
         lunarDistance = Moon.lunarDistance(); // Distance to the moon measured in units of Earth radii
         lunationNumber = Moon.lunationNumber(); // Brown Lunation Number (BLN)
+        if(hemisphere === "northern") {
+            lunarPhaseEmoji = Moon.lunarPhaseEmoji();
+            lightX = Math.sin(2 * Math.PI * lunarAgePercent);
+        } else {
+            lunarPhaseEmoji = Moon.lunarPhaseEmoji(date, {
+                hemisphere: Hemisphere.SOUTHERN,
+            });
+            lightX = -Math.sin(2 * Math.PI * lunarAgePercent);
+        }
+        lightZ = -Math.cos(2 * Math.PI * lunarAgePercent);
     }
 
     // Call the function initially to set the properties
@@ -69,7 +81,7 @@
         var moon = new THREE.Mesh(geometry, material);
 
         const light = new THREE.DirectionalLight(0xffffff, 2.4);
-        light.position.set(1, 0, 0);
+        light.position.set(lightX, 0, lightZ);
         scene.add(light);
 
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.03);
