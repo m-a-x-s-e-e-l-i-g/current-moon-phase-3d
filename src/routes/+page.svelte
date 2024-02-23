@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import { Hemisphere, Moon } from "lunarphase-js";
     import * as THREE from "three";
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const date = new Date();
 
@@ -54,11 +53,6 @@
         );
 
         var renderer = new THREE.WebGLRenderer({ antialias: true});
-
-        const controls = new OrbitControls( camera, renderer.domElement );
-        controls.enablePan = false;
-        controls.enableRotate = false;
-        controls.enableZoom = true;
 
         renderer.setSize(window.innerWidth, window.innerHeight);
 
