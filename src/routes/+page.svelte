@@ -7,22 +7,23 @@
 
     let lunarPhase: string,
         lunarPhaseEmoji: string,
-        lunarAge: number,
-        lunarAgePercent: number,
-        lunarDistance: number,
-        lunarLightPercent: string,
-        lunationNumber: number,
-        lightX: number,
-        lightZ: number;
+        lunarAge: number, // Earth days since the last new moon
+        lunarAgePercent: number, // Percentage of the moon's current age
+        lunarDistance: number, // Distance to the moon measured in units of Earth radii
+        lunarLightPercent: string, // How much of the moon is illuminated
+        lunationNumber: number, // Brown Lunation Number (BLN)
+        lightX: number, // X coordinate of the direct light source
+        lightZ: number; // Z coordinate of the direct light source
 
     function updateMoonProperties(hemisphere = "northern") {
         lunarPhase = Moon.lunarPhase();
-        lunarAge = Moon.lunarAge(); // Earth days since the last new moon
-        lunarAgePercent = Moon.lunarAgePercent(); // Percentage of the moon's current age
-        lunarDistance = Moon.lunarDistance(); // Distance to the moon measured in units of Earth radii
-        lunarLightPercent = ((1 - Math.abs(lunarAgePercent - 0.5) * 2) * 100).toFixed() + "%";
-        lunationNumber = Moon.lunationNumber(); // Brown Lunation Number (BLN)
-        if(hemisphere === "northern") {
+        lunarAge = Moon.lunarAge();
+        lunarAgePercent = Moon.lunarAgePercent();
+        lunarDistance = Moon.lunarDistance();
+        lunarLightPercent =
+            ((1 - Math.abs(lunarAgePercent - 0.5) * 2) * 100).toFixed() + "%";
+        lunationNumber = Moon.lunationNumber();
+        if (hemisphere === "northern") {
             lunarPhaseEmoji = Moon.lunarPhaseEmoji();
             lightX = Math.sin(2 * Math.PI * lunarAgePercent);
         } else {
@@ -52,7 +53,7 @@
             1000,
         );
 
-        var renderer = new THREE.WebGLRenderer({ antialias: true});
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
 
         renderer.setSize(window.innerWidth, window.innerHeight);
 
