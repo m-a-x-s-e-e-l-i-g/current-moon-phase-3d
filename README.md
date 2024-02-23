@@ -1,12 +1,11 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/f1933f9a-8239-4061-a679-2e0ab21baaad/deploy-status)](https://app.netlify.com/sites/current-moon-phase-3d/deploys)
 # Current Moon Phase in 3D
-Doesn't do what it says yet. Issa WIP. 🏗️👷
+Show the current moon phase in 3D. The lighting is accurate, the moon rotation is NOT because it looks cool this way.
 
 [TO THE MOON 🚀](https://current-moon-phase-3d.netlify.app/)
 
 ## Credits
 
-- 3D Moon is forked from a Pen by Omar Emad: https://codepen.io/darkfo222/pen/QWdpqyQ
 - Moon texture by NASA's Scientific Visualization Studio: [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720)
 
 ## Developing
