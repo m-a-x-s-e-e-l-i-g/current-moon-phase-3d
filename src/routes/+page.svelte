@@ -1,40 +1,45 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Hemisphere, Moon } from "lunarphase-js";
     import * as THREE from "three";
+    import SunCalc from 'suncalc';
+    const { getMoonIllumination, getMoonPosition } = SunCalc;
 
     const date = new Date();
 
-    let lunarPhase: string,
-        lunarPhaseEmoji: string,
-        lunarAge: number, // Earth days since the last new moon
-        lunarAgePercent: number, // Percentage of the moon's current age
-        lunarDistance: number, // Distance to the moon measured in units of Earth radii
-        lunarDistanceKilometers: string, // Distance to the moon measured in kilometers
-        lunarLightPercent: string, // How much of the moon is illuminated
-        lunationNumber: number, // Brown Lunation Number (BLN)
+    // currently hardcoded to Breda, Netherlands
+    const latitude = 51.571915;
+    const longitude = 4.768323;
+    const hemisphere = "northern";
+
+    const moonPhases = [
+        { start: 0.0, end: 0.02, phase: "New Moon", emoji: { northern: "🌑", southern: "🌑" } },
+        { start: 0.02, end: 0.25, phase: "Waxing Crescent", emoji: { northern: "🌒", southern: "🌘" } },
+        { start: 0.25, end: 0.27, phase: "First Quarter", emoji: { northern: "🌓", southern: "🌗" } },
+        { start: 0.27, end: 0.5, phase: "Waxing Gibbous", emoji: { northern: "🌔", southern: "🌖" } },
+        { start: 0.5, end: 0.52, phase: "Full Moon", emoji: { northern: "🌕", southern: "🌕" } },
+        { start: 0.52, end: 0.75, phase: "Waning Gibbous", emoji: { northern: "🌖", southern: "🌔" } },
+        { start: 0.75, end: 0.77, phase: "Last Quarter", emoji: { northern: "🌗", southern: "🌓" } },
+        { start: 0.77, end: 1.0, phase: "Waning Crescent", emoji: { northern: "🌘", southern: "🌒" } }
+    ];
+
+    let moonPhase: { limit: number, phase: string, emoji: { northern: string, southern: string } } = { limit: 0, phase: "Unknown", emoji: { northern: "🌚", southern: "🌚" } },
+        moonAgePercent: number, // Percentage of the moon's current age
+        moonDistance: string, // Distance to the moon in kilometers
+        moonPhasePercent: string, // How much of the moon is illuminated
         lightX: number, // X coordinate of the direct light source
         lightZ: number; // Z coordinate of the direct light source
 
     function updateMoonProperties(hemisphere = "northern") {
-        lunarPhase = Moon.lunarPhase() + " Moon";
-        lunarAge = Number(Moon.lunarAge().toFixed(1));
-        lunarAgePercent = Number(Moon.lunarAgePercent().toFixed(2));
-        lunarDistance = Moon.lunarDistance();
-        lunarDistanceKilometers = Math.round(lunarDistance * 6378.16).toLocaleString() + " kilometers";
-        lunarLightPercent =
-            ((1 - Math.abs(lunarAgePercent - 0.5) * 2) * 100).toFixed() + "%";
-        lunationNumber = Moon.lunationNumber();
+        moonAgePercent = Number(getMoonIllumination(date).phase.toFixed(2));
+        moonPhase = moonPhases.find(phase => moonAgePercent >= phase.start && moonAgePercent < phase.end);
+        moonPhasePercent = (getMoonIllumination(date).fraction*100).toFixed(2) + "%";
+        moonDistance = Math.round(getMoonPosition(date, latitude, longitude).distance).toLocaleString() + " kilometers";
         if (hemisphere === "northern") {
-            lunarPhaseEmoji = Moon.lunarPhaseEmoji();
-            lightX = Math.sin(2 * Math.PI * lunarAgePercent);
+            lightX = Math.sin(2 * Math.PI * moonAgePercent);
         } else {
-            lunarPhaseEmoji = Moon.lunarPhaseEmoji(date, {
-                hemisphere: Hemisphere.SOUTHERN,
-            });
-            lightX = -Math.sin(2 * Math.PI * lunarAgePercent);
+            lightX = -Math.sin(2 * Math.PI * moonAgePercent);
         }
-        lightZ = -Math.cos(2 * Math.PI * lunarAgePercent);
+        lightZ = -Math.cos(2 * Math.PI * moonAgePercent) * 0.4;
     }
 
     // Call the function initially to set the properties
@@ -116,7 +121,7 @@
 </script>
 
 <svelte:head>
-    <title>{lunarPhaseEmoji} Current Moon Phase in 3D</title>
+    <title>{moonPhase.emoji[hemisphere]} Current Moon Phase in 3D</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
@@ -162,14 +167,12 @@
     .github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}
 </style>
 
-<h1>{lunarPhaseEmoji} Current Moon Phase in 3D</h1>
+<h1>{moonPhase.emoji[hemisphere]} Current Moon Phase in 3D</h1>
 
 <div id="info">
-    <p>{lunarPhase + lunarPhaseEmoji}</p>
-    <p>Lunar Age: {lunarAge} days</p>
-    <p>Light Percent: {lunarLightPercent}</p>
-    <p>Distance: {lunarDistanceKilometers}</p>
-    <p>Lunation Number: {lunationNumber}</p>
+    <p>{moonPhase.phase + moonPhase.emoji[hemisphere]}</p>
+    <p>Phase: {moonPhasePercent}</p>
+    <p>Distance: {moonDistance}</p>
 </div>
 
 <div id="moon"></div>
