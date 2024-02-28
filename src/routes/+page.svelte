@@ -35,7 +35,8 @@
         moonIlluminationAngle: number, // angle: midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive
         lightX: number, // X coordinate of the direct light source
         lightY: number, // Y coordinate of the direct light source
-        lightZ: number; // Z coordinate of the direct light source
+        lightZ: number, // Z coordinate of the direct light source
+        hemisphereFactor: number; // 1 for northern hemisphere, -1 for southern hemisphere
 
     function updateMoonProperties() {
         moonAgePercent = Number(getMoonIllumination(date).phase.toFixed(2));
@@ -43,23 +44,16 @@
         moonPhasePercent = (getMoonIllumination(date).fraction*100).toFixed(2) + "%";
         moonIlluminationAngle = getMoonIllumination(date).angle;
         moonDistance = Math.round(getMoonPosition(date, latitude, longitude).distance).toLocaleString() + " kilometers";
-        if (hemisphere == "northern") {
-            lightX = Math.sin(2 * Math.PI * moonAgePercent);
-            if(moonIlluminationAngle < 0){ // waxing
-                lightY = -Math.cos(2 * Math.PI * moonAgePercent);
-            }
-            else{ // waning
-                lightY = Math.cos(2 * Math.PI * moonAgePercent);
-            }
-        } else {
-            lightX = -Math.sin(2 * Math.PI * moonAgePercent);
-            if(moonIlluminationAngle < 0){ // waxing
-                lightY = Math.cos(2 * Math.PI * moonAgePercent);
-            }
-            else{ // waning
-                lightY = -Math.cos(2 * Math.PI * moonAgePercent);
-            }
+        
+        hemisphereFactor = hemisphere === "northern" ? 1 : -1;
+        lightX = hemisphereFactor * Math.sin(2 * Math.PI * moonAgePercent);
+
+        if (moonIlluminationAngle < 0) { // waxing
+            lightY = hemisphereFactor * -Math.cos(2 * Math.PI * moonAgePercent);
+        } else { // waning
+            lightY = hemisphereFactor * Math.cos(2 * Math.PI * moonAgePercent);
         }
+
         lightZ = -Math.cos(2 * Math.PI * moonAgePercent);
     }
 
