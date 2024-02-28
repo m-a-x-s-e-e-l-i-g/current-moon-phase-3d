@@ -2,12 +2,9 @@
     import { onMount } from "svelte";
     import * as THREE from "three";
     import SunCalc from 'suncalc';
-    import * as Sheet from "$lib/components/ui/sheet";
-    import { Switch } from "$lib/components/ui/switch";
-    import { Label } from "$lib/components/ui/label";
     import { GithubCorner } from '$lib/components/ui/github-corner';
-    import Icon from 'svelte-awesome';
-    import gear from 'svelte-awesome/icons/gear';
+    import { SettingsMenu } from '$lib/components/ui/settings-menu';
+    import { hemisphere } from '$lib/stores.js';
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
@@ -16,7 +13,6 @@
     // currently hardcoded to Breda, Netherlands
     const latitude = 51.571915;
     const longitude = 4.768323;
-    $: hemisphere = "northern";
 
     const moonPhases = [
         { start: 0.0, end: 0.02, phase: "New Moon", emoji: { northern: "🌑", southern: "🌑" } },
@@ -47,7 +43,7 @@
         moonIlluminationAngle = getMoonIllumination(date).angle;
         moonDistance = Math.round(getMoonPosition(date, latitude, longitude).distance).toLocaleString() + " kilometers";
         
-        hemisphereFactor = hemisphere === "northern" ? 1 : -1;
+        hemisphereFactor = $hemisphere === "northern" ? 1 : -1;
         waxingFactor = moonIlluminationAngle < 0 ? -1 : 1;
         lightX = hemisphereFactor * Math.sin(2 * Math.PI * moonAgePercent);
         lightY = hemisphereFactor * waxingFactor * Math.cos(2 * Math.PI * moonAgePercent);
@@ -133,7 +129,7 @@
 </script>
 
 <svelte:head>
-    <title>{moonPhase.emoji[hemisphere]} Current Moon Phase in 3D</title>
+    <title>{moonPhase.emoji[$hemisphere]} Current Moon Phase in 3D</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
@@ -179,10 +175,10 @@
     }
 </style>
 
-<h1>{moonPhase.emoji[hemisphere]} Current Moon Phase in 3D</h1>
+<h1>{moonPhase.emoji[$hemisphere]} Current Moon Phase in 3D</h1>
 
 <div id="info">
-    <p>{moonPhase.phase + moonPhase.emoji[hemisphere]}</p>
+    <p>{moonPhase.phase + moonPhase.emoji[$hemisphere]}</p>
     <p>Phase: {moonPhasePercent}</p>
     <p>Distance: {moonDistance}</p>
 </div>
@@ -190,20 +186,4 @@
 <div id="moon"></div>
 
 <GithubCorner/>
-
-<Sheet.Root>
-  <Sheet.Trigger style="position:absolute;left:10px;top:5px;">
-    <Icon data={gear} label="Settings" style="fill:white"/>
-  </Sheet.Trigger>
-  <Sheet.Content side=left>
-    <Sheet.Header>
-      <Sheet.Title>Settings</Sheet.Title>
-      <Sheet.Description>
-        <div class="flex items-center space-x-2" style="margin-top:1em;">
-            <Switch id="hemisphere" on:click={() => hemisphere = hemisphere === 'northern' ? 'southern' : 'northern'}/>
-            <Label for="hemisphere"><span style="text-transform:capitalize">{hemisphere}</span> hemisphere</Label>
-        </div>
-      </Sheet.Description>
-    </Sheet.Header>
-  </Sheet.Content>
-</Sheet.Root>
+<SettingsMenu/>
