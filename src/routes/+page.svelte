@@ -11,7 +11,7 @@
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
     const date = new Date();
-
+    
     // currently hardcoded to Breda, Netherlands
     const latitude = 51.571915;
     const longitude = 4.768323;
@@ -34,6 +34,7 @@
         moonPhasePercent: string, // How much of the moon is illuminated
         moonIlluminationAngle: number, // angle: midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive
         lightX: number, // X coordinate of the direct light source
+        lightY: number, // Y coordinate of the direct light source
         lightZ: number; // Z coordinate of the direct light source
 
     function updateMoonProperties() {
@@ -44,10 +45,22 @@
         moonDistance = Math.round(getMoonPosition(date, latitude, longitude).distance).toLocaleString() + " kilometers";
         if (hemisphere == "northern") {
             lightX = Math.sin(2 * Math.PI * moonAgePercent);
+            if(moonIlluminationAngle < 0){ // waxing
+                lightY = -Math.cos(2 * Math.PI * moonAgePercent);
+            }
+            else{ // waning
+                lightY = Math.cos(2 * Math.PI * moonAgePercent);
+            }
         } else {
             lightX = -Math.sin(2 * Math.PI * moonAgePercent);
+            if(moonIlluminationAngle < 0){ // waxing
+                lightY = Math.cos(2 * Math.PI * moonAgePercent);
+            }
+            else{ // waning
+                lightY = -Math.cos(2 * Math.PI * moonAgePercent);
+            }
         }
-        lightZ = -Math.cos(2 * Math.PI * moonAgePercent) * 0.4;
+        lightZ = -Math.cos(2 * Math.PI * moonAgePercent);
     }
 
     // Call the function initially to set the properties
@@ -93,7 +106,7 @@
         var moon = new THREE.Mesh(geometry, material);
 
         const light = new THREE.DirectionalLight(0xffffff, 2.4);
-        light.position.set(lightX, 0, lightZ);
+        light.position.set(lightX, lightY, lightZ);
         scene.add(light);
 
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.03);
@@ -110,7 +123,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            light.position.set(lightX, 0, lightZ);
+            light.position.set(lightX, lightY, lightZ);
             moon.rotation.y += 0.0002;
             moon.rotation.x += 0;
             renderer.render(scene, camera);
