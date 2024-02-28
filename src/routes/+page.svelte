@@ -36,7 +36,8 @@
         lightX: number, // X coordinate of the direct light source
         lightY: number, // Y coordinate of the direct light source
         lightZ: number, // Z coordinate of the direct light source
-        hemisphereFactor: number; // 1 for northern hemisphere, -1 for southern hemisphere
+        hemisphereFactor: number, // 1 for northern hemisphere, -1 for southern hemisphere
+        waxingFactor: number; // -1 for waxing, 1 for waning
 
     function updateMoonProperties() {
         moonAgePercent = Number(getMoonIllumination(date).phase.toFixed(2));
@@ -46,14 +47,9 @@
         moonDistance = Math.round(getMoonPosition(date, latitude, longitude).distance).toLocaleString() + " kilometers";
         
         hemisphereFactor = hemisphere === "northern" ? 1 : -1;
+        waxingFactor = moonIlluminationAngle < 0 ? -1 : 1;
         lightX = hemisphereFactor * Math.sin(2 * Math.PI * moonAgePercent);
-
-        if (moonIlluminationAngle < 0) { // waxing
-            lightY = hemisphereFactor * -Math.cos(2 * Math.PI * moonAgePercent);
-        } else { // waning
-            lightY = hemisphereFactor * Math.cos(2 * Math.PI * moonAgePercent);
-        }
-
+        lightY = hemisphereFactor * waxingFactor * Math.cos(2 * Math.PI * moonAgePercent);
         lightZ = -Math.cos(2 * Math.PI * moonAgePercent);
     }
 
