@@ -34,3 +34,4 @@ You can preview the production build with `npm run preview`.
 ## Credits
 
 - Moon texture by NASA's Scientific Visualization Studio: [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720)
+- Reference for checking the current lighting: [Moon Phase and Libration, 2024](https://svs.gsfc.nasa.gov/5187/)
