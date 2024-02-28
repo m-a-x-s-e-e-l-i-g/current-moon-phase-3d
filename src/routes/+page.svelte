@@ -184,7 +184,6 @@
     <p>{moonPhase.phase + moonPhase.emoji[hemisphere]}</p>
     <p>Phase: {moonPhasePercent}</p>
     <p>Distance: {moonDistance}</p>
-    <p>Angle: {moonIlluminationAngle.toFixed(2)}°</p>
 </div>
 
 <div id="moon"></div>
