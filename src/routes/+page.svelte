@@ -136,6 +136,9 @@
 </svelte:head>
 
 <style>
+    h1 {
+        font-size: 25px;
+    }
     h1, p {
         font-family: "Space Grotesk", sans-serif;
         text-align: center;
