@@ -4,7 +4,7 @@
     import SunCalc from 'suncalc';
     import { GithubCorner } from '$lib/components/ui/github-corner';
     import { SettingsMenu } from '$lib/components/ui/settings-menu';
-    import { hemisphere } from '$lib/stores.js';
+    import { hemisphere, doge } from '$lib/stores.js';
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
@@ -55,31 +55,38 @@
     setInterval(() => updateMoonProperties(), 600);
 
     onMount(() => {
-        var moonTextureImage = "./img/lroc_color_poles_1k.jpg";
-        var moonDisplacementImageLowRes = "./img/ldem_4_uint.jpg";
-        var moonDisplacementImageHighRes = "./img/ldem_hw5x3.jpg";
-
+        
+        // Create a scene
         var scene = new THREE.Scene();
-
+        
+        // Create a camera
         var camera = new THREE.PerspectiveCamera(
             75,
             window.innerWidth / window.innerHeight,
             0.1,
             1000,
         );
-
+        camera.position.z = 5;
+        
+        // Create a renderer and add it to the DOM
         var renderer = new THREE.WebGLRenderer({ antialias: true });
-
         renderer.setSize(window.innerWidth, window.innerHeight);
-
         document.getElementById("moon")?.appendChild(renderer.domElement);
 
+        // Create a sphere
         var geometry = new THREE.SphereGeometry(2, 60, 60);
 
+        var moonDisplacementImageLowRes = "./img/ldem_4_uint.jpg";
+        var moonDisplacementImageHighRes = "./img/ldem_hw5x3.jpg";
+        var moonTextureImage = "./img/lroc_color_poles_1k.jpg";
+        var moonTextureDogeImage = "./img/lroc_doge_wow_1k.jpg";
+        // Load the moon texture and displacement map
         var textureLoader = new THREE.TextureLoader();
         var texture = textureLoader.load(moonTextureImage);
+        var textureDoge = textureLoader.load(moonTextureDogeImage);
         var displacementMap = textureLoader.load(moonDisplacementImageHighRes);
 
+        // Create a material
         var material = new THREE.MeshPhongMaterial({
             map: texture,
             displacementMap: displacementMap,
@@ -90,29 +97,28 @@
             shininess: 0,
         });
 
+        // Create a moon mesh
         var moon = new THREE.Mesh(geometry, material);
+        scene.add(moon);
 
+        // Create a point light
         const light = new THREE.DirectionalLight(0xffffff, 2.4);
         light.position.set(lightX, lightY, lightZ);
         scene.add(light);
 
+        // Create a hemisphere light
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.03);
         hemiLight.color.setHSL(0.6, 1, 0.6);
         hemiLight.groundColor.setHSL(0.095, 1, 0.75);
         hemiLight.position.set(0, 0, 0);
         scene.add(hemiLight);
 
-        scene.add(moon);
-        camera.position.z = 5;
-
-        moon.rotation.x = 3.1415 * 0.02;
-        moon.rotation.y = 3.1415 * 1.54;
-
         function animate() {
             requestAnimationFrame(animate);
             light.position.set(lightX, lightY, lightZ);
             moon.rotation.y += 0.0002;
             moon.rotation.x += 0;
+            material.map = $doge ? textureDoge : texture;
             renderer.render(scene, camera);
         }
         animate();
