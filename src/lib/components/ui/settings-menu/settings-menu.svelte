@@ -26,7 +26,7 @@
           v && ($hemisphere = v.value);
         }}>
         <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="{$hemisphere}"/>
+          <Select.Value placeholder="{$hemisphere}" style="text-transform:capitalize;"/>
         </Select.Trigger>
         <Select.Content>
           <Select.Item value="northern">Northern</Select.Item>
@@ -34,7 +34,7 @@
         </Select.Content>
       </Select.Root>
       <div class="flex" style="margin-top:1em;">
-        <Label class="flex-auto" for="doge">Doge moon</Label>
+        <Label class="flex-auto" for="doge">Doge mode</Label>
         <Switch class="flex-none" id="doge" bind:checked={$doge}/>
       </div>
     </div>
