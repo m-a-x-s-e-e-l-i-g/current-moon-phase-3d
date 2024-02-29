@@ -114,12 +114,62 @@
         hemiLight.position.set(0, 0, 0);
         scene.add(hemiLight);
 
+        // Doge mode
+        const dogeGeometry = new THREE.BufferGeometry();
+        const sprite = new THREE.TextureLoader().load( './img/dogecoin.png' );
+        const vertices = [];
+        for ( let i = 0; i < 5000; i ++ ) {
+            const x = 2000 * Math.random() - 1000;
+            const y = 2000 * Math.random() - 1000;
+            const z = 2000 * Math.random() - 1000;
+            vertices.push( x, y, z );
+        }
+
+        dogeGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 4 ) );
+        var dogeMaterial = new THREE.PointsMaterial( { size: 10, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: true } );    
+        
+        // Random doge particles
+        const dogeParticles = new THREE.Points( dogeGeometry, dogeMaterial );
+        scene.add( dogeParticles );
+        
+        
+        const positions = dogeParticles.geometry.getAttribute('position');
+        let randomNumbers = new Float32Array(positions.count * 3);
+        const maxDistance = 1000;
+        for (let i = 0; i < randomNumbers.length; i++) {
+            randomNumbers[i] = Math.random() - 0.5;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             light.position.set(lightX, lightY, lightZ);
             moon.rotation.y += 0.0002;
             moon.rotation.x += 0;
             material.map = $doge ? textureDoge : texture;
+
+            // Animate doge particles
+            if ($doge) {
+                dogeParticles.visible = true;
+                const maxDistanceSquared = maxDistance * maxDistance;
+                for (let i = 0; i < positions.count; i++) {
+                    let dx = positions.array[i * 3] += randomNumbers[i * 3];     // x
+                    let dy = positions.array[i * 3 + 1] += randomNumbers[i * 3 + 1]; // y
+                    let dz = positions.array[i * 3 + 2] += randomNumbers[i * 3 + 2]; // z
+
+                    // Check if the particle is too far from the origin
+                    let distanceSquared = dx * dx + dy * dy + dz * dz;
+                    if (distanceSquared > maxDistanceSquared) {
+                        // Reverse the particle's direction
+                        randomNumbers[i * 3] *= -1;
+                        randomNumbers[i * 3 + 1] *= -1;
+                        randomNumbers[i * 3 + 2] *= -1;
+                    }
+                }
+                positions.needsUpdate = true;
+            } else {
+                dogeParticles.visible = false;
+            }
+
             renderer.render(scene, camera);
         }
         animate();
