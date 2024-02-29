@@ -4,6 +4,7 @@
     import SunCalc from 'suncalc';
     import { GithubCorner } from '$lib/components/ui/github-corner';
     import { SettingsMenu } from '$lib/components/ui/settings-menu';
+    import { DogeSong } from '$lib/components/ux/doge-song';
     import { hemisphere, doge } from '$lib/stores.js';
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
@@ -193,3 +194,4 @@
 
 <GithubCorner/>
 <SettingsMenu/>
+<DogeSong/>
