@@ -195,6 +195,7 @@
 <style>
     h1 {
         font-size: 25px;
+        text-shadow: 0 0 10px #000, -0 -0 10px #000, 0 -0 10px #000, -0 0 10px #000;
     }
     h1, p {
         font-family: "Space Grotesk", sans-serif;
