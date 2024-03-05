@@ -38,5 +38,12 @@
         <Switch class="flex-none" id="doge" bind:checked={$doge}/>
       </div>
     </div>
+    <Sheet.Footer class="absolute bottom-5">
+      <Sheet.Close>
+        <a href="https://www.maxmade.nl" target="_blank" rel="noreferrer">
+          <img src="img/logo-MAXmade-FFF.svg" alt="MAXmade" class="h-4 mx-auto"/>
+        </a>
+      </Sheet.Close>
+    </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
