@@ -252,4 +252,4 @@
 
 <GithubCorner/>
 <SettingsMenu/>
-<!-- <DogeSong/> -->
+<DogeSong/>
