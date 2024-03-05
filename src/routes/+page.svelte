@@ -56,7 +56,9 @@
     setInterval(() => updateMoonProperties(), 600);
 
     onMount(() => {
-        
+        const HemisphereLightIntensity = 0.03;
+        const DogeHemisphereLightIntensity = 0.23;
+
         // Create a scene
         var scene = new THREE.Scene();
         
@@ -108,37 +110,34 @@
         scene.add(light);
 
         // Create a hemisphere light
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.03);
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, HemisphereLightIntensity);
         hemiLight.color.setHSL(0.6, 1, 0.6);
         hemiLight.groundColor.setHSL(0.095, 1, 0.75);
         hemiLight.position.set(0, 0, 0);
         scene.add(hemiLight);
 
         // Doge mode
-        const dogeGeometry = new THREE.BufferGeometry();
-        const sprite = new THREE.TextureLoader().load( './img/dogecoin.png' );
-        const vertices = [];
-        for ( let i = 0; i < 5000; i ++ ) {
-            const x = 2000 * Math.random() - 1000;
-            const y = 2000 * Math.random() - 1000;
-            const z = 2000 * Math.random() - 1000;
-            vertices.push( x, y, z );
-        }
-
-        dogeGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 4 ) );
-        var dogeMaterial = new THREE.PointsMaterial( { size: 10, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: true } );    
+        const dogeGeometry = new THREE.CylinderGeometry(5, 5, 1, 60);
+        const dogeTexture = new THREE.TextureLoader().load('./img/dogecoin.png');
+        const dogeMaterial = new THREE.MeshPhongMaterial({ map: dogeTexture, shininess: 100, reflectivity: 0.8, specular: 0xDBBC57});
         
-        // Random doge particles
-        const dogeParticles = new THREE.Points( dogeGeometry, dogeMaterial );
-        scene.add( dogeParticles );
-        
-        
-        const positions = dogeParticles.geometry.getAttribute('position');
-        let randomNumbers = new Float32Array(positions.count * 3);
+        // Create an array to hold the particles and their positions
+        const randomNumbers = [];
+        const particleCount = 1000; // Change this to the number of particles you want
         const maxDistance = 1000;
-        for (let i = 0; i < randomNumbers.length; i++) {
-            randomNumbers[i] = Math.random() - 0.5;
+        const maxDistanceSquared = maxDistance * maxDistance;
+
+        // Create the particles
+        const dogeParticles = new THREE.InstancedMesh(dogeGeometry, dogeMaterial, particleCount);
+        for (let i = 0; i < particleCount; i++) {
+            const position = new THREE.Vector3(Math.random() * 1000 - 500, Math.random() * 1000 - 500, Math.random() * 1000 - 500);
+            dogeParticles.setMatrixAt(i, new THREE.Matrix4().setPosition(position));
+            randomNumbers.push({
+                direction: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5),
+                rotation: Math.random() * 0.05 - 0.01 // Random rotation speed between -0.01 and 0.01
+            });
         }
+        scene.add(dogeParticles);
 
         function animate() {
             requestAnimationFrame(animate);
@@ -149,24 +148,32 @@
 
             // Animate doge particles
             if ($doge) {
+                hemiLight.intensity = DogeHemisphereLightIntensity;
                 dogeParticles.visible = true;
-                const maxDistanceSquared = maxDistance * maxDistance;
-                for (let i = 0; i < positions.count; i++) {
-                    let dx = positions.array[i * 3] += randomNumbers[i * 3];     // x
-                    let dy = positions.array[i * 3 + 1] += randomNumbers[i * 3 + 1]; // y
-                    let dz = positions.array[i * 3 + 2] += randomNumbers[i * 3 + 2]; // z
+                for (let i = 0; i < particleCount; i++) {
+                    const matrix = new THREE.Matrix4();
+                    dogeParticles.getMatrixAt(i, matrix);
+                    const position = new THREE.Vector3().setFromMatrixPosition(matrix);
+                    position.add(randomNumbers[i].direction);
 
                     // Check if the particle is too far from the origin
-                    let distanceSquared = dx * dx + dy * dy + dz * dz;
+                    let distanceSquared = position.lengthSq();
                     if (distanceSquared > maxDistanceSquared) {
                         // Reverse the particle's direction
-                        randomNumbers[i * 3] *= -1;
-                        randomNumbers[i * 3 + 1] *= -1;
-                        randomNumbers[i * 3 + 2] *= -1;
+                        randomNumbers[i].direction.negate();
                     }
+
+                    // Apply rotation
+                    const rotation = new THREE.Euler().setFromRotationMatrix(matrix);
+                    rotation.x += randomNumbers[i].rotation;
+                    rotation.z += randomNumbers[i].rotation;
+                    rotation.y += randomNumbers[i].rotation;
+                    const quaternion = new THREE.Quaternion().setFromEuler(rotation);
+                    dogeParticles.setMatrixAt(i, matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1)));
                 }
-                positions.needsUpdate = true;
+                dogeParticles.instanceMatrix.needsUpdate = true;
             } else {
+                hemiLight.intensity = HemisphereLightIntensity;
                 dogeParticles.visible = false;
             }
 
@@ -245,4 +252,4 @@
 
 <GithubCorner/>
 <SettingsMenu/>
-<DogeSong/>
+<!-- <DogeSong/> -->
