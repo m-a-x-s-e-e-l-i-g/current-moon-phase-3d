@@ -193,7 +193,7 @@
 </script>
 
 <svelte:head>
-    <title>{moonPhase.emoji[$hemisphere]} Current Moon Phase in 3D</title>
+    <title>{moonPhase.emoji[$hemisphere]} Current Moon Phase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
@@ -240,7 +240,7 @@
     }
 </style>
 
-<h1>{moonPhase.emoji[$hemisphere]} Current Moon Phase in 3D</h1>
+<h1>{moonPhase.emoji[$hemisphere]} Current Moon Phase</h1>
 
 <div id="info">
     <p>{moonPhase.phase + moonPhase.emoji[$hemisphere]}</p>
