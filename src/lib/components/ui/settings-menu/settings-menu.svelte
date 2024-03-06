@@ -1,12 +1,23 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import * as Select from "$lib/components/ui/select";
   import * as Sheet from "$lib/components/ui/sheet";
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
   import { DonateButton } from '$lib/components/ui/donate-button';
+  import { Toaster } from "$lib/components/ui/sonner";
+  import { toast } from "svelte-sonner";
   import Icon from 'svelte-awesome';
   import gear from 'svelte-awesome/icons/gear';
   import { hemisphere, doge } from '$lib/stores.js';
+
+  onMount(() => {
+    const unsubscribe = doge.subscribe(value => {
+      toast.success(`Doge mode ${value ? 'enabled' : 'disabled'}`);
+    });
+
+    return unsubscribe;
+  });
 </script>
 
 <Sheet.Root>
@@ -25,6 +36,7 @@
       <Select.Root selected={$hemisphere}
         onSelectedChange={(v) => {
           v && ($hemisphere = v.value);
+          toast.success(`Hemisphere set to ${v.value}`);
         }}>
         <Select.Trigger class="w-[180px]">
           <Select.Value placeholder="{$hemisphere}" style="text-transform:capitalize;"/>
@@ -49,3 +61,4 @@
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
+<Toaster />
