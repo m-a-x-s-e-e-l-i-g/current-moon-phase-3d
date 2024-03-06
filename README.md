@@ -1,17 +1,17 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/f1933f9a-8239-4061-a679-2e0ab21baaad/deploy-status)](https://app.netlify.com/sites/current-moon-phase-3d/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/f1933f9a-8239-4061-a679-2e0ab21baaad/deploy-status)](https://app.netlify.com/sites/moon-phase/deploys)
 
 # Current Moon Phase in 3D
 
 Show the current moon phase in 3D. The moon rotation is currently not accurate, so it will rotate.
 
-<a href="https://current-moon-phase-3d.netlify.app/">
+<a href="https://moon-phase.netlify.app/">
 <img src="https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/e20a00ba-d65b-4bc7-8684-9fb6c0e1a5d4"/>
 </a>
 
 ## Now with beautiful DOGE mode!
 ![image](https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/318a32e8-9308-49e5-bceb-63de135fda5e)
 
-[TO THE MOON 🚀](https://current-moon-phase-3d.netlify.app/)
+[TO THE MOON 🚀](https://moon-phase.netlify.app/)
 
 ## Developing
 
