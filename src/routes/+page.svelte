@@ -5,15 +5,12 @@
     import { GithubCorner } from '$lib/components/ui/github-corner';
     import { SettingsMenu } from '$lib/components/ui/settings-menu';
     import { DogeSong } from '$lib/components/ux/doge-song';
-    import { hemisphere, doge } from '$lib/stores.js';
+    import { hemisphere, doge, latitude, longitude } from '$lib/stores.js';
+    import { toast } from "svelte-sonner";
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
     const date = new Date();
-    
-    // currently hardcoded to Breda, Netherlands
-    const latitude = 51.571915;
-    const longitude = 4.768323;
 
     const moonPhases = [
         { start: 0.0, end: 0.02, phase: "New Moon", emoji: { northern: "🌑", southern: "🌑" } },
@@ -42,7 +39,7 @@
         moonPhase = moonPhases.find(phase => moonAgePercent >= phase.start && moonAgePercent < phase.end);
         moonPhasePercent = (getMoonIllumination(date).fraction*100).toFixed(2) + "%";
         moonIlluminationAngle = getMoonIllumination(date).angle;
-        moonDistance = Math.round(getMoonPosition(date, latitude, longitude).distance).toLocaleString() + " kilometers";
+        moonDistance = Math.round(getMoonPosition(date, $latitude, $longitude).distance).toLocaleString() + " kilometers";
         
         hemisphereFactor = $hemisphere === "northern" ? 1 : -1;
         waxingFactor = moonIlluminationAngle < 0 ? -1 : 1;
@@ -56,6 +53,40 @@
     setInterval(() => updateMoonProperties(), 600);
 
     onMount(() => {
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(setPosition, showError);
+            } else {
+                toast.error("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function setPosition(position) {
+            $latitude = position.coords.latitude;
+            $longitude = position.coords.longitude;
+            toast.success("Location set to your current location.");
+        }
+
+        function showError(error) {
+            const defaultString = "Defaulting to Breda, the Netherlands.";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    toast.error("Location request denied.", { description: defaultString });
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    toast.error("Location unavailable.", { description: defaultString });
+                    break;
+                case error.TIMEOUT:
+                    toast.error("Location request timed out.", { description: defaultString });
+                    break;
+                case error.UNKNOWN_ERROR:
+                    toast.error("Unknown error 🤷", { description: defaultString });
+                    break;
+            }
+        }
+        
+        getLocation();
+
         const HemisphereLightIntensity = 0.03;
         const DogeHemisphereLightIntensity = 0.23;
 
