@@ -2,11 +2,14 @@
 
 # Current Moon Phase in 3D
 
-Show the current moon phase in 3D. The moon rotation is not accurate because the animation looks cool.
+Show the current moon phase in 3D. The moon rotation is currently not accurate, so it will rotate.
 
 <a href="https://current-moon-phase-3d.netlify.app/">
-<img src="https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/697b55a4-33b9-4339-aad9-b71757c0b0c0"/>
+<img src="https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/e20a00ba-d65b-4bc7-8684-9fb6c0e1a5d4"/>
 </a>
+
+## Now with beautiful DOGE mode!
+![image](https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/318a32e8-9308-49e5-bceb-63de135fda5e)
 
 [TO THE MOON 🚀](https://current-moon-phase-3d.netlify.app/)
 
