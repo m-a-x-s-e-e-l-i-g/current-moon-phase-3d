@@ -10,14 +10,6 @@
   import Icon from 'svelte-awesome';
   import gear from 'svelte-awesome/icons/gear';
   import { hemisphere, doge } from '$lib/stores.js';
-
-  onMount(() => {
-    const unsubscribe = doge.subscribe(value => {
-      toast.success(`Doge mode ${value ? 'enabled' : 'disabled'}`);
-    });
-
-    return unsubscribe;
-  });
 </script>
 
 <Sheet.Root>
