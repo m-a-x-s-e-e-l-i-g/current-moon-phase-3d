@@ -9,7 +9,9 @@ Show the current moon phase in 3D. The moon rotation is currently not accurate, 
 </a>
 
 ## Now with beautiful DOGE mode!
-![image](https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/318a32e8-9308-49e5-bceb-63de135fda5e)
+<a href="https://moon-phase.netlify.app/">
+<img src="https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/318a32e8-9308-49e5-bceb-63de135fda5e"/>
+</a>
 
 [TO THE MOON 🚀](https://moon-phase.netlify.app/)
 
