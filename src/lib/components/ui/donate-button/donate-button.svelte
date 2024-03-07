@@ -1,7 +1,6 @@
 <script lang="ts">
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "$lib/components/ui/button";
-  import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import Icon from 'svelte-awesome';
   import paypal from 'svelte-awesome/icons/paypal';
@@ -54,4 +53,3 @@
     </DropdownMenu.Content>
   </DropdownMenu.Root>
 </div>
-<Toaster />
