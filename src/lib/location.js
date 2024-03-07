@@ -12,7 +12,7 @@ export function getLocation() {
 function setPosition(position) {
     latitude.set(position.coords.latitude);
     longitude.set(position.coords.longitude);
-    toast.success("Your current location has been set.");
+    toast("Your current location has been set.");
 }
 
 function showError(error) {

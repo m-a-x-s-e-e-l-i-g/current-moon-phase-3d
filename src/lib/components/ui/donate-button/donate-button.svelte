@@ -14,7 +14,7 @@
   async function copyToClipboard(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Address copied to clipboard");
+      toast("Address copied to clipboard");
     } catch (err) {
       toast.error("Failed to copy address to clipboard");
     }

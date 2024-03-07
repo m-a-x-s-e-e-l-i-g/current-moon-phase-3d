@@ -8,11 +8,11 @@ export const hemisphere = writable('northern');
 export const doge = writable(false);
 
 doge.subscribe(value => {
-    toast.success(`Doge mode ${value ? 'enabled' : 'disabled'}`);
+    toast(`Doge mode ${value ? 'enabled' : 'disabled'}`);
 });
 
 latitude.subscribe(value => {
     let hemi = value >= 0 ? 'northern' : 'southern';
     hemisphere.set(hemi);
-    toast.success(`Hemisphere set to ${hemi}`);
+    toast(`Hemisphere set to ${hemi}`);
 });
