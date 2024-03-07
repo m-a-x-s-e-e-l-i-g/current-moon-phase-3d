@@ -6,7 +6,7 @@
     import { SettingsMenu } from '$lib/components/ui/settings-menu';
     import { DogeSong } from '$lib/components/ux/doge-song';
     import { hemisphere, doge, latitude, longitude } from '$lib/stores.js';
-    import { toast } from "svelte-sonner";
+    import { getLocation } from '$lib/location.js';
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
@@ -53,37 +53,6 @@
     setInterval(() => updateMoonProperties(), 600);
 
     onMount(() => {
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(setPosition, showError);
-            } else {
-                toast.error("Geolocation is not supported by this browser.");
-            }
-        }
-
-        function setPosition(position) {
-            $latitude = position.coords.latitude;
-            $longitude = position.coords.longitude;
-            toast.success("Location set to your current location.");
-        }
-
-        function showError(error) {
-            const defaultString = "Defaulting to Breda, the Netherlands.";
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    toast.error("Location request denied.", { description: defaultString });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    toast.error("Location unavailable.", { description: defaultString });
-                    break;
-                case error.TIMEOUT:
-                    toast.error("Location request timed out.", { description: defaultString });
-                    break;
-                case error.UNKNOWN_ERROR:
-                    toast.error("Unknown error 🤷", { description: defaultString });
-                    break;
-            }
-        }
         
         getLocation();
 
