@@ -7,6 +7,7 @@
     import { DogeSong } from '$lib/components/ux/doge-song';
     import { hemisphere, doge, latitude, longitude } from '$lib/stores.js';
     import { getLocation } from '$lib/location.js';
+    import { Toaster } from "$lib/components/ui/sonner";
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
@@ -253,3 +254,4 @@
 <GithubCorner/>
 <SettingsMenu/>
 <DogeSong/>
+<Toaster/>

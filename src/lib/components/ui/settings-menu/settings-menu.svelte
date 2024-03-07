@@ -1,15 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import * as Select from "$lib/components/ui/select";
   import * as Sheet from "$lib/components/ui/sheet";
   import { Switch } from "$lib/components/ui/switch";
   import { Label } from "$lib/components/ui/label";
   import { DonateButton } from '$lib/components/ui/donate-button';
-  import { Toaster } from "$lib/components/ui/sonner";
-  import { toast } from "svelte-sonner";
   import Icon from 'svelte-awesome';
   import gear from 'svelte-awesome/icons/gear';
-  import { hemisphere, doge } from '$lib/stores.js';
+  import { doge } from '$lib/stores.js';
 </script>
 
 <Sheet.Root>
@@ -22,26 +18,9 @@
       <Sheet.Description>
       </Sheet.Description>
     </Sheet.Header>
-    <br/>
-    <div>
-      <Label>Hemisphere</Label>
-      <Select.Root selected={$hemisphere}
-        onSelectedChange={(v) => {
-          v && ($hemisphere = v.value);
-          toast.success(`Hemisphere set to ${v.value}`);
-        }}>
-        <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="{$hemisphere}" style="text-transform:capitalize;"/>
-        </Select.Trigger>
-        <Select.Content>
-          <Select.Item value="northern">Northern</Select.Item>
-          <Select.Item value="southern">Southern</Select.Item>
-        </Select.Content>
-      </Select.Root>
-      <div class="flex" style="margin-top:1em;">
-        <Label class="flex-auto" for="doge">Doge mode</Label>
-        <Switch class="flex-none" id="doge" bind:checked={$doge}/>
-      </div>
+    <div class="flex" style="margin-top:2em;">
+      <Label class="flex-auto" for="doge">Doge mode</Label>
+      <Switch class="flex-none" id="doge" bind:checked={$doge}/>
     </div>
     <Sheet.Footer class="absolute bottom-5 left-5 right-5"> 
       <DonateButton/>
@@ -53,4 +32,3 @@
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>
-<Toaster />
