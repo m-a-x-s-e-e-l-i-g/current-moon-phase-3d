@@ -254,4 +254,4 @@
 <GithubCorner/>
 <SettingsMenu/>
 <DogeSong/>
-<Toaster/>
+<Toaster expand={true}/>
