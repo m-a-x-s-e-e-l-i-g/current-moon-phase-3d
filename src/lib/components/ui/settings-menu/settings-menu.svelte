@@ -25,7 +25,7 @@
     <Sheet.Footer class="absolute bottom-5 left-5 right-5"> 
       <DonateButton/>
       <Sheet.Close class="absolute right-0 bottom-2">
-        <a href="https://www.maxmade.nl" target="_blank" rel="noreferrer">
+        <a href="https://www.maxmade.nl?utm_source=moon-phase&utm_medium=referral" target="_blank" rel="noreferrer"></a>
           <img src="img/logo-MAXmade-FFF.svg" alt="MAXmade" class="h-4 mx-auto"/>
         </a>
       </Sheet.Close>
