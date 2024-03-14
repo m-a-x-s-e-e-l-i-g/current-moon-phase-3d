@@ -5,7 +5,7 @@ import { toast } from 'svelte-sonner';
 export const latitude = writable(51.571915);
 export const longitude = writable(4.768323);
 export const hemisphere = writable('northern');
-export const doge = writable(false);
+export const doge = writable(true);
 
 doge.subscribe(value => {
     toast(`Doge mode ${value ? 'enabled' : 'disabled'}`);
