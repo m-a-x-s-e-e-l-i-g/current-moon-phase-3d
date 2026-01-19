@@ -105,10 +105,33 @@
         var moon = new THREE.Mesh(geometry, material);
         scene.add(moon);
 
+        // In normal mode, keep the Moon tidally locked (same face toward the camera/Earth).
+        // This value is a texture-to-geometry alignment offset for the LROC texture.
+        const MOON_BASE_ROTATION_Y = Math.PI / 2;
+        const DOGE_MOON_SPIN_SPEED = 0.0015;
+
         // Create a point light
         const light = new THREE.DirectionalLight(0xffffff, 2.4);
         light.position.set(lightX, lightY, lightZ);
         scene.add(light);
+
+        // Party lighting (doge mode only)
+        const partyLights: THREE.PointLight[] = [];
+        const partyLightIntensity = 9;
+        const partyLightDistance = 30;
+        const partyLightPositions = [
+            new THREE.Vector3(6, 2, 6),
+            new THREE.Vector3(-6, -2, 6),
+            new THREE.Vector3(0, 6, -4),
+        ];
+
+        for (let i = 0; i < partyLightPositions.length; i++) {
+            const partyLight = new THREE.PointLight(0xff00ff, partyLightIntensity, partyLightDistance);
+            partyLight.position.copy(partyLightPositions[i]);
+            partyLight.visible = false;
+            scene.add(partyLight);
+            partyLights.push(partyLight);
+        }
 
         // Create a hemisphere light
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, HemisphereLightIntensity);
@@ -143,9 +166,39 @@
         function animate() {
             requestAnimationFrame(animate);
             light.position.set(lightX, lightY, lightZ);
-            moon.rotation.y += 0.0002;
-            moon.rotation.x += 0;
+
+            if ($doge) {
+                // Doge mode can spin around for fun.
+                moon.rotation.y += DOGE_MOON_SPIN_SPEED;
+            } else {
+                // Normal mode: show the correct Earth-facing side (no random rotation).
+                moon.rotation.set(0, MOON_BASE_ROTATION_Y, 0);
+            }
             material.map = $doge ? textureDoge : texture;
+
+            // Animate party lights in doge mode
+            if ($doge) {
+                const t = performance.now() * 0.001;
+                for (let i = 0; i < partyLights.length; i++) {
+                    const partyLight = partyLights[i];
+                    partyLight.visible = true;
+
+                    const hue = (t * 0.25 + i / partyLights.length) % 1;
+                    partyLight.color.setHSL(hue, 1, 0.6);
+
+                    // Subtle orbit so it feels like a party/strobe setup
+                    const base = partyLightPositions[i];
+                    partyLight.position.set(
+                        base.x + Math.sin(t * 1.2 + i) * 1.2,
+                        base.y + Math.cos(t * 1.1 + i) * 1.2,
+                        base.z + Math.sin(t * 0.9 + i) * 1.2
+                    );
+                }
+            } else {
+                for (let i = 0; i < partyLights.length; i++) {
+                    partyLights[i].visible = false;
+                }
+            }
 
             // Animate doge particles
             if ($doge) {
