@@ -11,9 +11,104 @@
 
     const { getMoonIllumination, getMoonPosition } = SunCalc;
 
-    const date = new Date();
+    type Hemisphere = 'northern' | 'southern';
+    type MoonPhase = { start: number; end: number; phase: string; emoji: { northern: string; southern: string } };
 
-    const moonPhases = [
+    type PhaseEvent = {
+        label: string;
+        emoji: string;
+        targetPhase: number;
+        date: Date;
+    };
+
+    const MS_PER_HOUR = 60 * 60 * 1000;
+    const MS_PER_DAY = 24 * MS_PER_HOUR;
+
+    const PHASE_EVENTS: Array<Omit<PhaseEvent, 'date'>> = [
+        { label: 'New Moon', emoji: '🌑', targetPhase: 0.0 },
+        { label: 'First Quarter', emoji: '🌓', targetPhase: 0.25 },
+        { label: 'Full Moon', emoji: '🌕', targetPhase: 0.5 },
+        { label: 'Last Quarter', emoji: '🌗', targetPhase: 0.75 }
+    ];
+
+    function phaseDistance(a: number, b: number) {
+        const d = Math.abs(a - b);
+        return Math.min(d, 1 - d);
+    }
+
+    function findNearestPhaseTime(center: Date, targetPhase: number, windowDays = 16) {
+        const startMs = center.getTime() - windowDays * MS_PER_DAY;
+        const endMs = center.getTime() + windowDays * MS_PER_DAY;
+        const stepMs = MS_PER_HOUR; // coarse scan
+
+        let bestTimeMs = startMs;
+        let bestDist = Number.POSITIVE_INFINITY;
+
+        for (let t = startMs; t <= endMs; t += stepMs) {
+            const p = getMoonIllumination(new Date(t)).phase;
+            const dist = phaseDistance(p, targetPhase);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestTimeMs = t;
+            }
+        }
+
+        // Refine around the best hit with a simple step-halving search.
+        let refineStep = stepMs / 2;
+        for (let i = 0; i < 14; i++) {
+            const left = bestTimeMs - refineStep;
+            const right = bestTimeMs + refineStep;
+            const pLeft = getMoonIllumination(new Date(left)).phase;
+            const pRight = getMoonIllumination(new Date(right)).phase;
+            const dLeft = phaseDistance(pLeft, targetPhase);
+            const dRight = phaseDistance(pRight, targetPhase);
+
+            if (dLeft < bestDist) {
+                bestDist = dLeft;
+                bestTimeMs = left;
+            }
+            if (dRight < bestDist) {
+                bestDist = dRight;
+                bestTimeMs = right;
+            }
+            refineStep /= 2;
+        }
+
+        return new Date(bestTimeMs);
+    }
+
+    function computePhaseEvents(center: Date): PhaseEvent[] {
+        const events = PHASE_EVENTS.map((def) => ({
+            ...def,
+            date: findNearestPhaseTime(center, def.targetPhase)
+        }));
+        events.sort((a, b) => a.date.getTime() - b.date.getTime());
+        return events;
+    }
+
+    function formatDateTime(d: Date) {
+        return new Intl.DateTimeFormat(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(d);
+    }
+
+    // Time slider state
+    let selectedDate: Date = new Date();
+    let phaseEvents: PhaseEvent[] = [];
+    let useLiveNow = true;
+    let baseTimeMs = Date.now();
+    let timeOffsetHours = 0; // relative to baseTimeMs (when not live)
+    let nowMs = Date.now();
+
+    // selectedDate must be driven by a reactive value; Date.now() alone won't re-run.
+    $: selectedDate = new Date((useLiveNow ? nowMs : baseTimeMs) + timeOffsetHours * MS_PER_HOUR);
+    $: phaseEvents = computePhaseEvents(selectedDate);
+
+    const moonPhases: MoonPhase[] = [
         { start: 0.0, end: 0.02, phase: "New Moon", emoji: { northern: "🌑", southern: "🌑" } },
         { start: 0.02, end: 0.25, phase: "Waxing Crescent", emoji: { northern: "🌒", southern: "🌘" } },
         { start: 0.25, end: 0.27, phase: "First Quarter", emoji: { northern: "🌓", southern: "🌗" } },
@@ -24,11 +119,15 @@
         { start: 0.77, end: 1.0, phase: "Waning Crescent", emoji: { northern: "🌘", southern: "🌒" } }
     ];
 
-    let moonPhase: { limit: number, phase: string, emoji: { northern: string, southern: string } } = { limit: 0, phase: "Unknown", emoji: { northern: "🌚", southern: "🌚" } },
+    let hemiKey: Hemisphere = 'northern';
+    $: hemiKey = $hemisphere === 'southern' ? 'southern' : 'northern';
+
+    let moonPhase: MoonPhase = moonPhases[0],
         moonAgePercent: number, // Percentage of the moon's current age
         moonDistance: string, // Distance to the moon in kilometers
         moonPhasePercent: string, // How much of the moon is illuminated
         moonIlluminationAngle: number, // angle: midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive
+        earthshineIntensity: number, // faint earth-lit glow on the dark side
         lightX: number, // X coordinate of the direct light source
         lightY: number, // Y coordinate of the direct light source
         lightZ: number, // Z coordinate of the direct light source
@@ -36,22 +135,59 @@
         waxingFactor: number; // -1 for waxing, 1 for waning
 
     function updateMoonProperties() {
-        moonAgePercent = Number(getMoonIllumination(date).phase.toFixed(2));
-        moonPhase = moonPhases.find(phase => moonAgePercent >= phase.start && moonAgePercent < phase.end);
-        moonPhasePercent = (getMoonIllumination(date).fraction*100).toFixed(2) + "%";
-        moonIlluminationAngle = getMoonIllumination(date).angle;
-        moonDistance = Math.round(getMoonPosition(date, $latitude, $longitude).distance).toLocaleString() + " kilometers";
-        
+        const illumination = getMoonIllumination(selectedDate);
+        const moonPos = getMoonPosition(selectedDate, $latitude, $longitude);
+
+        moonAgePercent = Number(illumination.phase.toFixed(2));
+        moonPhase = moonPhases.find(phase => moonAgePercent >= phase.start && moonAgePercent < phase.end) ?? moonPhases[0];
+        moonPhasePercent = (illumination.fraction * 100).toFixed(2) + "%";
+        moonIlluminationAngle = illumination.angle;
+        moonDistance = Math.round(moonPos.distance).toLocaleString() + " kilometers";
+
         hemisphereFactor = $hemisphere === "northern" ? 1 : -1;
         waxingFactor = moonIlluminationAngle < 0 ? -1 : 1;
-        lightX = hemisphereFactor * Math.sin(2 * Math.PI * moonAgePercent);
-        lightY = hemisphereFactor * waxingFactor * Math.cos(2 * Math.PI * moonAgePercent);
-        lightZ = -Math.cos(2 * Math.PI * moonAgePercent);
+
+        // Accurate lighting: compute a sun-direction in camera/view space that matches
+        // (1) the illuminated fraction and (2) the bright-limb orientation.
+        //
+        // For a unit sphere observed from +Z (camera in front), the illuminated fraction is:
+        //   f = (1 + cos(i)) / 2
+        // where i is the phase angle between the sun direction and the observer direction.
+        // So i = acos(2f - 1). Then we rotate the projected sun direction by the
+        // bright-limb position angle (corrected for parallactic angle).
+        const fraction = Math.min(1, Math.max(0, illumination.fraction));
+        const phaseAngle = Math.acos(2 * fraction - 1);
+
+        // Approximate Earthshine: strongest near new moon, fades quickly toward full.
+        earthshineIntensity = 0.12 * Math.pow(1 - fraction, 2.3);
+
+        // SunCalc's illumination.angle is measured eastward from the north point.
+        // On the sky, east is to the *left* when north is up, so we flip X.
+        // Adjust by the parallactic angle so the limb matches the user's local "up".
+        let limbAngle = illumination.angle - moonPos.parallacticAngle;
+
+        // Southern hemisphere: the Moon appears flipped (roughly a 180° rotation).
+        if ($hemisphere === "southern") limbAngle += Math.PI;
+
+        const inPlane = Math.sin(phaseAngle);
+        const sunDirX = -Math.sin(limbAngle) * inPlane;
+        const sunDirY = Math.cos(limbAngle) * inPlane;
+        const sunDirZ = Math.cos(phaseAngle);
+
+        const lightDistance = 10;
+        lightX = sunDirX * lightDistance;
+        lightY = sunDirY * lightDistance;
+        lightZ = sunDirZ * lightDistance;
     }
 
-    // Call the function initially to set the properties
-    updateMoonProperties();
-    setInterval(() => updateMoonProperties(), 600);
+    // Keep properties in sync with time/location/hemisphere.
+    $: {
+        selectedDate;
+        $latitude;
+        $longitude;
+        $hemisphere;
+        updateMoonProperties();
+    }
 
     onMount(() => {
         
@@ -74,6 +210,10 @@
         
         // Create a renderer and add it to the DOM
         var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById("moon")?.appendChild(renderer.domElement);
 
@@ -90,15 +230,25 @@
         var textureDoge = textureLoader.load(moonTextureDogeImage);
         var displacementMap = textureLoader.load(moonDisplacementImageHighRes);
 
-        // Create a material
-        var material = new THREE.MeshPhongMaterial({
+        texture.colorSpace = THREE.SRGBColorSpace;
+        textureDoge.colorSpace = THREE.SRGBColorSpace;
+        displacementMap.colorSpace = THREE.NoColorSpace;
+
+        const maxAniso = renderer.capabilities.getMaxAnisotropy?.() ?? 1;
+        texture.anisotropy = maxAniso;
+        textureDoge.anisotropy = maxAniso;
+
+        // Create a material (NASA-like: matte, high roughness, low specular)
+        var material = new THREE.MeshStandardMaterial({
             map: texture,
             displacementMap: displacementMap,
-            displacementScale: 0.06,
+            displacementScale: 0.03,
             bumpMap: displacementMap,
-            bumpScale: 8.04,
-            reflectivity: 0,
-            shininess: 0,
+            bumpScale: 1.35,
+            roughness: 1.0,
+            metalness: 0.0,
+            emissive: new THREE.Color(0x223347),
+            emissiveIntensity: 0,
         });
 
         // Create a moon mesh
@@ -111,8 +261,9 @@
         const DOGE_MOON_SPIN_SPEED = 0.0015;
 
         // Create a point light
-        const light = new THREE.DirectionalLight(0xffffff, 2.4);
+        const light = new THREE.DirectionalLight(0xffffff, 3.2);
         light.position.set(lightX, lightY, lightZ);
+        scene.add(light.target);
         scene.add(light);
 
         // Party lighting (doge mode only)
@@ -146,7 +297,7 @@
         const dogeMaterial = new THREE.MeshPhongMaterial({ map: dogeTexture, shininess: 100, reflectivity: 0.8, specular: 0xDBBC57});
         
         // Create an array to hold the particles and their positions
-        const randomNumbers = [];
+        const randomNumbers: Array<{ direction: THREE.Vector3; rotation: number }> = [];
         const particleCount = 1000; // Change this to the number of particles you want
         const maxDistance = 1000;
         const maxDistanceSquared = maxDistance * maxDistance;
@@ -166,6 +317,8 @@
         function animate() {
             requestAnimationFrame(animate);
             light.position.set(lightX, lightY, lightZ);
+            // Keep the dark side barely visible like real photos (earthshine).
+            material.emissiveIntensity = $doge ? 0 : earthshineIntensity;
 
             if ($doge) {
                 // Doge mode can spin around for fun.
@@ -227,7 +380,7 @@
                 }
                 dogeParticles.instanceMatrix.needsUpdate = true;
             } else {
-                hemiLight.intensity = HemisphereLightIntensity;
+                hemiLight.intensity = 0.008;
                 dogeParticles.visible = false;
             }
 
@@ -243,13 +396,23 @@
         }
 
         window.addEventListener("resize", onResize, false);
+
+        // Drive Live mode updates.
+        const liveTimer = window.setInterval(() => {
+            if (useLiveNow) nowMs = Date.now();
+        }, 1000);
+
+        return () => {
+            window.removeEventListener("resize", onResize, false);
+            window.clearInterval(liveTimer);
+        };
     });
 </script>
 
 <svelte:head>
-    <title>{moonPhase.emoji[$hemisphere]} Current Moon Phase</title>
+    <title>{moonPhase.emoji[hemiKey]} Current Moon Phase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 </svelte:head>
 
@@ -283,8 +446,9 @@
         background-color: rgba(0, 0, 0, 0.5);
         display: flex;
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         justify-content: space-between;
+        gap: 1rem;
         align-items: center;
         align-content: center;
     }
@@ -292,14 +456,106 @@
     #info p {
         display: inline-flex;
     }
+
+    .time {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
+
+    .time-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .time-meta {
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+
+    .slider {
+        width: 100%;
+    }
+
+    .timeline {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        opacity: 0.95;
+    }
+
+    .event {
+        font-family: "Space Grotesk", sans-serif;
+        color: #fff;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .event.past {
+        opacity: 0.65;
+    }
 </style>
 
-<h1>{moonPhase.emoji[$hemisphere]} Current Moon Phase</h1>
+<h1>{moonPhase.emoji[hemiKey]} Current Moon Phase</h1>
 
 <div id="info">
-    <p>{moonPhase.phase + moonPhase.emoji[$hemisphere]}</p>
+    <p>{moonPhase.phase + moonPhase.emoji[hemiKey]}</p>
     <p>Phase: {moonPhasePercent}</p>
     <p>Distance: {moonDistance}</p>
+
+    <div class="time">
+        <div class="time-top">
+            <p class="time-meta">Time: {formatDateTime(selectedDate)} {useLiveNow ? '(Live)' : ''}</p>
+            <div>
+                <label style="color:#fff;font-family:Space Grotesk, sans-serif; margin-right: 0.75rem;">
+                    <input
+                        type="checkbox"
+                        bind:checked={useLiveNow}
+                        on:change={() => {
+                            if (!useLiveNow) baseTimeMs = Date.now();
+                            if (useLiveNow) timeOffsetHours = 0;
+                        }}
+                    />
+                    Live
+                </label>
+                <button
+                    style="color:#fff;border:1px solid rgba(255,255,255,0.25);padding:0.25rem 0.6rem;border-radius:0.4rem;"
+                    on:click={() => {
+                        useLiveNow = true;
+                        timeOffsetHours = 0;
+                    }}
+                >Now</button>
+            </div>
+        </div>
+
+        <input
+            class="slider"
+            type="range"
+            min="-720"
+            max="720"
+            step="1"
+            bind:value={timeOffsetHours}
+            on:input={() => {
+                if (useLiveNow) {
+                    useLiveNow = false;
+                    baseTimeMs = Date.now();
+                }
+            }}
+        />
+
+        <div class="timeline">
+            {#each phaseEvents as ev (ev.label)}
+                <span class={`event ${ev.date.getTime() < selectedDate.getTime() ? 'past' : ''}`}>
+                    {ev.emoji} {ev.label}: {formatDateTime(ev.date)}
+                </span>
+            {/each}
+        </div>
+    </div>
 </div>
 
 <div id="moon"></div>

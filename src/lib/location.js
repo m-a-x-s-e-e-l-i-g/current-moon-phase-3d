@@ -9,12 +9,14 @@ export function getLocation() {
     }
 }
 
+/** @param {GeolocationPosition} position */
 function setPosition(position) {
     latitude.set(position.coords.latitude);
     longitude.set(position.coords.longitude);
     toast("Your current location has been set.");
 }
 
+/** @param {GeolocationPositionError} error */
 function showError(error) {
     const defaultString = "Defaulting to Breda, the Netherlands.";
     switch (error.code) {
@@ -27,7 +29,7 @@ function showError(error) {
         case error.TIMEOUT:
             toast.error("Location request timed out.", { description: defaultString });
             break;
-        case error.UNKNOWN_ERROR:
+        default:
             toast.error("Unknown error 🤷", { description: defaultString });
             break;
     }
