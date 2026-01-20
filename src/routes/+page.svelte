@@ -108,6 +108,12 @@
     $: selectedDate = new Date((useLiveNow ? nowMs : baseTimeMs) + timeOffsetHours * MS_PER_HOUR);
     $: phaseEvents = computePhaseEvents(selectedDate);
 
+    // Fixed orientation + lens (baked settings)
+    const MOON_ORIENTATION_ROT_X = (8 * Math.PI) / 180;
+    const MOON_ORIENTATION_ROT_Y = (-176 * Math.PI) / 180;
+    const MOON_ORIENTATION_ROT_Z = (4 * Math.PI) / 180;
+    const CAMERA_FOV_DEG = 14.3;
+
     const moonPhases: MoonPhase[] = [
         { start: 0.0, end: 0.02, phase: "New Moon", emoji: { northern: "🌑", southern: "🌑" } },
         { start: 0.02, end: 0.25, phase: "Waxing Crescent", emoji: { northern: "🌒", southern: "🌘" } },
@@ -201,12 +207,14 @@
         
         // Create a camera
         var camera = new THREE.PerspectiveCamera(
-            75,
+            CAMERA_FOV_DEG,
             window.innerWidth / window.innerHeight,
             0.1,
             1000,
         );
-        camera.position.z = 5;
+
+        // Start farther back; use lens zoom (FOV) for a telephoto look.
+        camera.position.z = 25;
         
         // Create a renderer and add it to the DOM
         var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -217,13 +225,12 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById("moon")?.appendChild(renderer.domElement);
 
-        // Create a sphere
         var geometry = new THREE.SphereGeometry(2, 60, 60);
 
-        var moonDisplacementImageLowRes = "./img/ldem_4_uint.jpg";
         var moonDisplacementImageHighRes = "./img/ldem_hw5x3.jpg";
         var moonTextureImage = "./img/lroc_color_poles_1k.jpg";
         var moonTextureDogeImage = "./img/lroc_doge_wow_1k.jpg";
+
         // Load the moon texture and displacement map
         var textureLoader = new THREE.TextureLoader();
         var texture = textureLoader.load(moonTextureImage);
@@ -316,6 +323,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
+
             light.position.set(lightX, lightY, lightZ);
             // Keep the dark side barely visible like real photos (earthshine).
             material.emissiveIntensity = $doge ? 0 : earthshineIntensity;
@@ -325,7 +333,11 @@
                 moon.rotation.y += DOGE_MOON_SPIN_SPEED;
             } else {
                 // Normal mode: show the correct Earth-facing side (no random rotation).
-                moon.rotation.set(0, MOON_BASE_ROTATION_Y, 0);
+                moon.rotation.set(
+                    MOON_ORIENTATION_ROT_X,
+                    MOON_BASE_ROTATION_Y + MOON_ORIENTATION_ROT_Y,
+                    MOON_ORIENTATION_ROT_Z
+                );
             }
             material.map = $doge ? textureDoge : texture;
 
@@ -499,6 +511,7 @@
     .event.past {
         opacity: 0.65;
     }
+
 </style>
 
 <h1>{moonPhase.emoji[hemiKey]} Current Moon Phase</h1>
@@ -555,6 +568,7 @@
                 </span>
             {/each}
         </div>
+
     </div>
 </div>
 
