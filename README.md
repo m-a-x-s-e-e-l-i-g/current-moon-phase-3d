@@ -2,7 +2,11 @@
 
 # Current Moon Phase in 3D
 
-Show the current moon phase in 3D. The moon rotation is currently not accurate, so it will rotate.
+Show the current moon phase in 3D — with lighting driven by real calculations.
+
+I originally started this after coming across a beautiful 3D Moon demo on CodePen. It looked awesome,
+but I wanted the illuminated fraction and bright-limb orientation to be correct, not just “close enough”.
+So I combined that visual inspiration with proper Moon phase math.
 
 <a href="https://moon-phase.netlify.app/">
 <img src="https://github.com/m-a-x-s-e-e-l-i-g/current-moon-phase-3d/assets/7907436/e20a00ba-d65b-4bc7-8684-9fb6c0e1a5d4"/>
@@ -36,7 +40,19 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
+## How it works
+
+- **Moon phase & limb orientation:** computed via [SunCalc](https://github.com/mourner/suncalc) using the Moon’s illumination and position.
+- **3D render:** [Three.js](https://threejs.org/) sphere with a Moon texture + displacement map.
+- **Location (optional):** if you allow geolocation, it helps orient the bright limb for your local sky. No location data is sent to a server.
+
+## Notes on accuracy
+
+- The illuminated fraction and limb orientation are calculation-driven.
+- The Moon’s orientation/rotation is still slightly off — this is a known issue I want to fix.
+
 ## Credits
 
 - Moon texture by NASA's Scientific Visualization Studio: [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720)
 - Reference for checking the current lighting: [Moon Phase and Libration, 2024](https://svs.gsfc.nasa.gov/5187/)
+- Inspiration for the 3D starting point: [3D Moon (CodePen)](https://codepen.io/darkfo222/pen/QWdpqyQ)

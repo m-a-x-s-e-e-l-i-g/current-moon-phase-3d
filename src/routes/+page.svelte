@@ -5,6 +5,7 @@
     import { GithubCorner } from '$lib/components/ui/github-corner';
     import { SettingsMenu } from '$lib/components/ui/settings-menu';
     import { DogeSong } from '$lib/components/ux/doge-song';
+    import { ProjectStory } from '$lib/components/ux/project-story';
     import { hemisphere, doge, latitude, longitude } from '$lib/stores.js';
     import { getLocation } from '$lib/location.js';
     import { Toaster } from "$lib/components/ui/sonner";
@@ -472,11 +473,16 @@
     }
 
     #moon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: -1
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+    }
+
+    .hero {
+        position: relative;
+        min-height: 100vh;
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
     }
 
     #info {
@@ -557,83 +563,88 @@
 
 </style>
 
-<h1>{moonPhase.emoji[hemiKey]} Current Moon Phase</h1>
+<section class="hero">
+    <h1>{moonPhase.emoji[hemiKey]} Current Moon Phase</h1>
 
-<div id="info">
-    <p>{moonPhase.phase + moonPhase.emoji[hemiKey]}</p>
-    <p>Phase: {moonPhasePercent}</p>
-    <p>Distance: {moonDistance}</p>
+    <div id="info">
+        <p>{moonPhase.phase + moonPhase.emoji[hemiKey]}</p>
+        <p>Phase: {moonPhasePercent}</p>
+        <p>Distance: {moonDistance}</p>
 
-    <div class="time">
-        <div class="time-top">
-            <div class="time-meta">
-                <span>Time:</span>
-                <input
-                    class="datetime"
-                    type="datetime-local"
-                    step="60"
-                    value={toDateTimeLocalValue(selectedDate)}
-                    on:change={onDateTimeLocalChange}
-                />
-                {#if useLiveNow}
-                    <span>(Live)</span>
-                {/if}
-            </div>
-            <div>
-                <label style="color:#fff;font-family:Space Grotesk, sans-serif; margin-right: 0.75rem;">
+        <div class="time">
+            <div class="time-top">
+                <div class="time-meta">
+                    <span>Time:</span>
                     <input
-                        type="checkbox"
-                        bind:checked={useLiveNow}
-                        on:change={() => {
-                            if (useLiveNow) {
-                                nowMs = Date.now();
-                                timeOffsetHours = 0;
-                            } else {
-                                anchorTimeMs = Date.now();
-                                timeOffsetHours = 0;
-                            }
-                        }}
+                        class="datetime"
+                        type="datetime-local"
+                        step="60"
+                        value={toDateTimeLocalValue(selectedDate)}
+                        on:change={onDateTimeLocalChange}
                     />
-                    Live
-                </label>
-                <button
-                    style="color:#fff;border:1px solid rgba(255,255,255,0.25);padding:0.25rem 0.6rem;border-radius:0.4rem;"
-                    on:click={() => {
-                        useLiveNow = true;
-                        nowMs = Date.now();
-                        timeOffsetHours = 0;
-                    }}
-                >Now</button>
+                    {#if useLiveNow}
+                        <span>(Live)</span>
+                    {/if}
+                </div>
+                <div>
+                    <label style="color:#fff;font-family:Space Grotesk, sans-serif; margin-right: 0.75rem;">
+                        <input
+                            type="checkbox"
+                            bind:checked={useLiveNow}
+                            on:change={() => {
+                                if (useLiveNow) {
+                                    nowMs = Date.now();
+                                    timeOffsetHours = 0;
+                                } else {
+                                    anchorTimeMs = Date.now();
+                                    timeOffsetHours = 0;
+                                }
+                            }}
+                        />
+                        Live
+                    </label>
+                    <button
+                        style="color:#fff;border:1px solid rgba(255,255,255,0.25);padding:0.25rem 0.6rem;border-radius:0.4rem;"
+                        on:click={() => {
+                            useLiveNow = true;
+                            nowMs = Date.now();
+                            timeOffsetHours = 0;
+                        }}
+                    >Now</button>
+                </div>
             </div>
+
+            <input
+                class="slider"
+                type="range"
+                min="-720"
+                max="720"
+                step="1"
+                bind:value={timeOffsetHours}
+                on:input={() => {
+                    if (useLiveNow) {
+                        useLiveNow = false;
+                        anchorTimeMs = Date.now();
+                    }
+                }}
+            />
+
+            <div class="timeline">
+                {#each phaseEvents as ev (ev.label)}
+                    <span class={`event ${ev.date.getTime() < selectedDate.getTime() ? 'past' : ''}`}>
+                        {ev.emoji} {ev.label}: {formatDateTime(ev.date)}
+                    </span>
+                {/each}
+            </div>
+
         </div>
-
-        <input
-            class="slider"
-            type="range"
-            min="-720"
-            max="720"
-            step="1"
-            bind:value={timeOffsetHours}
-            on:input={() => {
-                if (useLiveNow) {
-                    useLiveNow = false;
-                    anchorTimeMs = Date.now();
-                }
-            }}
-        />
-
-        <div class="timeline">
-            {#each phaseEvents as ev (ev.label)}
-                <span class={`event ${ev.date.getTime() < selectedDate.getTime() ? 'past' : ''}`}>
-                    {ev.emoji} {ev.label}: {formatDateTime(ev.date)}
-                </span>
-            {/each}
-        </div>
-
     </div>
-</div>
+
+</section>
 
 <div id="moon"></div>
+
+<ProjectStory/>
 
 <GithubCorner/>
 <SettingsMenu/>
