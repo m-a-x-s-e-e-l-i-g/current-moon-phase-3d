@@ -96,16 +96,46 @@
         }).format(d);
     }
 
-    // Time slider state
+    function toDateTimeLocalValue(d: Date) {
+        const pad2 = (n: number) => String(n).padStart(2, '0');
+        const year = d.getFullYear();
+        const month = pad2(d.getMonth() + 1);
+        const day = pad2(d.getDate());
+        const hour = pad2(d.getHours());
+        const minute = pad2(d.getMinutes());
+        return `${year}-${month}-${day}T${hour}:${minute}`;
+    }
+
+    function fromDateTimeLocalValue(value: string): Date | null {
+        // datetime-local has no timezone; interpret as local time.
+        if (!value) return null;
+        const [datePart, timePart] = value.split('T');
+        if (!datePart || !timePart) return null;
+        const [y, m, d] = datePart.split('-').map(Number);
+        const [hh, mm] = timePart.split(':').map(Number);
+        if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mm)) return null;
+        return new Date(y, m - 1, d, hh, mm, 0, 0);
+    }
+
+    function onDateTimeLocalChange(event: Event) {
+        const input = event.currentTarget as HTMLInputElement | null;
+        const next = fromDateTimeLocalValue(input?.value ?? '');
+        if (!next) return;
+        useLiveNow = false;
+        anchorTimeMs = next.getTime();
+        timeOffsetHours = 0;
+    }
+
+    // Time selector state
     let selectedDate: Date = new Date();
     let phaseEvents: PhaseEvent[] = [];
     let useLiveNow = true;
-    let baseTimeMs = Date.now();
-    let timeOffsetHours = 0; // relative to baseTimeMs (when not live)
+    let anchorTimeMs = Date.now();
+    let timeOffsetHours = 0; // relative to anchorTimeMs (when not live)
     let nowMs = Date.now();
 
     // selectedDate must be driven by a reactive value; Date.now() alone won't re-run.
-    $: selectedDate = new Date((useLiveNow ? nowMs : baseTimeMs) + timeOffsetHours * MS_PER_HOUR);
+    $: selectedDate = new Date((useLiveNow ? nowMs : anchorTimeMs) + timeOffsetHours * MS_PER_HOUR);
     $: phaseEvents = computePhaseEvents(selectedDate);
 
     // Fixed orientation + lens (baked settings)
@@ -487,6 +517,19 @@
     .time-meta {
         opacity: 0.9;
         font-size: 0.95rem;
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .datetime {
+        background: rgba(0, 0, 0, 0.25);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 0.4rem;
+        padding: 0.25rem 0.5rem;
+        font-family: "Space Grotesk", sans-serif;
     }
 
     .slider {
@@ -523,15 +566,32 @@
 
     <div class="time">
         <div class="time-top">
-            <p class="time-meta">Time: {formatDateTime(selectedDate)} {useLiveNow ? '(Live)' : ''}</p>
+            <div class="time-meta">
+                <span>Time:</span>
+                <input
+                    class="datetime"
+                    type="datetime-local"
+                    step="60"
+                    value={toDateTimeLocalValue(selectedDate)}
+                    on:change={onDateTimeLocalChange}
+                />
+                {#if useLiveNow}
+                    <span>(Live)</span>
+                {/if}
+            </div>
             <div>
                 <label style="color:#fff;font-family:Space Grotesk, sans-serif; margin-right: 0.75rem;">
                     <input
                         type="checkbox"
                         bind:checked={useLiveNow}
                         on:change={() => {
-                            if (!useLiveNow) baseTimeMs = Date.now();
-                            if (useLiveNow) timeOffsetHours = 0;
+                            if (useLiveNow) {
+                                nowMs = Date.now();
+                                timeOffsetHours = 0;
+                            } else {
+                                anchorTimeMs = Date.now();
+                                timeOffsetHours = 0;
+                            }
                         }}
                     />
                     Live
@@ -540,6 +600,7 @@
                     style="color:#fff;border:1px solid rgba(255,255,255,0.25);padding:0.25rem 0.6rem;border-radius:0.4rem;"
                     on:click={() => {
                         useLiveNow = true;
+                        nowMs = Date.now();
                         timeOffsetHours = 0;
                     }}
                 >Now</button>
@@ -556,7 +617,7 @@
             on:input={() => {
                 if (useLiveNow) {
                     useLiveNow = false;
-                    baseTimeMs = Date.now();
+                    anchorTimeMs = Date.now();
                 }
             }}
         />
