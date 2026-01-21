@@ -257,10 +257,10 @@
         document.getElementById("moon")?.appendChild(renderer.domElement);
 
         var geometry = new THREE.SphereGeometry(2, 60, 60);
-
-        var moonDisplacementImageHighRes = "./img/ldem_hw5x3.jpg";
-        var moonTextureImage = "./img/lroc_color_poles_1k.jpg";
-        var moonTextureDogeImage = "./img/lroc_doge_wow_1k.jpg";
+        
+        var moonDisplacementImageHighRes = "./img/ldem_16_uint.webp";
+        var moonTextureImage = "./img/lroc_color_16bit_srgb_8k.webp";
+        var moonTextureDogeImage = "./img/lroc_doge_wow_1k.webp";
 
         // Load the moon texture and displacement map
         var textureLoader = new THREE.TextureLoader();
