@@ -103,5 +103,22 @@
                 </div>
             </div>
         </Reveal>
+
+        <Reveal className="mt-14">
+            <div class="mx-auto max-w-6xl">
+                <div class="mx-auto flex max-w-3xl items-center justify-center">
+                    <a
+                        class="group inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-white/80 backdrop-blur transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+                        href="https://www.maxmade.nl?utm_source=moon-phase&utm_medium=referral&utm_campaign=portfolio_footer"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        <img src="/img/logo-MAXmade-FFF.svg" alt="MAXmade" class="h-4 w-auto opacity-90 transition group-hover:opacity-100" />
+                        <span class="text-sm">More projects on my portfolio</span>
+                        <span class="text-white/50" aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </div>
+        </Reveal>
     </div>
 </section>

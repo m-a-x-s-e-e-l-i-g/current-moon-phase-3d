@@ -56,3 +56,7 @@ You can preview the production build with `npm run preview`.
 - Moon texture by NASA's Scientific Visualization Studio: [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720)
 - Reference for checking the current lighting: [Moon Phase and Libration, 2024](https://svs.gsfc.nasa.gov/5187/)
 - Inspiration for the 3D starting point: [3D Moon (CodePen)](https://codepen.io/darkfo222/pen/QWdpqyQ)
+
+## Portfolio
+
+More of my work: [MAXmade](https://www.maxmade.nl?utm_source=moon-phase&utm_medium=referral&utm_campaign=readme)
