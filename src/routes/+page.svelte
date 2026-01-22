@@ -156,6 +156,8 @@
     // Camera tuning
     const CAMERA_FOV_DEG = 0.5;
     const CAMERA_DISTANCE = 695;
+    const CAMERA_DISTANCE_MOBILE = 1000; // Increased distance on mobile so moon fits screen
+    const MOBILE_BREAKPOINT = 768; // px
 
     // Baked light settings
     const LIGHT_INTENSITY = 3.2;
@@ -267,6 +269,13 @@
 
         const HemisphereLightIntensity = 0.03;
 
+        // Helper function to get camera distance based on screen width
+        function getCameraDistance(): number {
+            return (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT) 
+                ? CAMERA_DISTANCE_MOBILE 
+                : CAMERA_DISTANCE;
+        }
+
         // Create a scene
         var scene = new THREE.Scene();
         
@@ -279,7 +288,7 @@
         );
 
         // Start farther back; use lens zoom (FOV) for a telephoto look.
-        camera.position.z = CAMERA_DISTANCE;
+        camera.position.z = getCameraDistance();
         
         // Create a renderer and add it to the DOM
         var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -712,6 +721,7 @@
         // Keep moon in the middle of the window
         function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
+            camera.position.z = getCameraDistance(); // Update distance for mobile/desktop
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             dogeParticlesState.bounds = getParticleBounds();
