@@ -48,8 +48,9 @@ You can preview the production build with `npm run preview`.
 
 ## Notes on accuracy
 
+- The Moon’s orientation/rotation is now accurate.
 - The illuminated fraction and limb orientation are calculation-driven.
-- The Moon’s orientation/rotation is still slightly off — this is a known issue I want to fix.
+- The lighting still needs some fine tuning.
 
 ## Credits
 

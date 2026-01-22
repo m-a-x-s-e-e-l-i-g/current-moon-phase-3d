@@ -91,8 +91,9 @@
                 <div>
                     <h3 class="text-sm font-semibold tracking-wide text-white">What’s accurate?</h3>
                     <p class="mt-2 text-sm leading-relaxed text-white/70">
+                        The Moon’s orientation/rotation is now accurate.
                         The illuminated fraction and limb orientation are computed from SunCalc.
-                        The Moon’s orientation/rotation is still a bit off — fixing that is on my TODO list.
+                        The lighting still needs some fine tuning.
                     </p>
                 </div>
                 <div>
