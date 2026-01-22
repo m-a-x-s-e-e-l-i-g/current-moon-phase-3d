@@ -140,10 +140,42 @@
     $: phaseEvents = computePhaseEvents(selectedDate);
 
     // Fixed orientation + lens (baked settings)
-    const MOON_ORIENTATION_ROT_X = (8 * Math.PI) / 180;
-    const MOON_ORIENTATION_ROT_Y = (-176 * Math.PI) / 180;
-    const MOON_ORIENTATION_ROT_Z = (4 * Math.PI) / 180;
-    const CAMERA_FOV_DEG = 14.3;
+    const DEFAULT_ROT_X_DEG = -72.4;
+    const DEFAULT_ROT_Y_DEG = 154;
+    const DEFAULT_ROT_Z_DEG = -71.3;
+
+    // Baked material settings (MeshStandardMaterial)
+    const DEFAULT_DISPLACEMENT_SCALE = 0.03;
+    const DEFAULT_DISPLACEMENT_BIAS = 0;
+    const MOON_BUMP_SCALE = 3;
+    const MOON_BLACK_POINT = 0.06;
+    const MOON_WHITE_POINT = 1.0;
+    const MOON_SATURATION = 1.0;
+    const MOON_VIBRANCE = -0.44;
+
+    // Camera tuning
+    const CAMERA_FOV_DEG = 0.5;
+    const CAMERA_DISTANCE = 695;
+
+    // Baked light settings
+    const LIGHT_INTENSITY = 3.2;
+
+    // Doge mode (baked)
+    const DOGE_SPIN_SPEED = 0.005;
+    const DOGE_HEMI_INTENSITY = 0.23;
+    const DOGE_PARTY_LIGHT_INTENSITY = 50;
+    const DOGE_PARTY_LIGHT_DISTANCE = 30;
+
+    // Doge particles (baked)
+    const DOGE_PARTICLE_COUNT = 1000;
+    const DOGE_PARTICLE_MAX_DISTANCE = 1000;
+    const DOGE_PARTICLE_SPAWN_RANGE = 1000;
+    const DOGE_PARTICLE_SPEED = 1.0;
+    const DOGE_PARTICLE_ROTATION_SPEED = 0.02;
+    const DOGE_PARTICLE_SCALE = 1.0;
+
+    const degToRad = (deg: number) => (deg * Math.PI) / 180;
+
 
     const moonPhases: MoonPhase[] = [
         { start: 0.0, end: 0.02, phase: "New Moon", emoji: { northern: "🌑", southern: "🌑" } },
@@ -227,11 +259,9 @@
     }
 
     onMount(() => {
-        
         getLocation();
 
         const HemisphereLightIntensity = 0.03;
-        const DogeHemisphereLightIntensity = 0.23;
 
         // Create a scene
         var scene = new THREE.Scene();
@@ -245,7 +275,7 @@
         );
 
         // Start farther back; use lens zoom (FOV) for a telephoto look.
-        camera.position.z = 25;
+        camera.position.z = CAMERA_DISTANCE;
         
         // Create a renderer and add it to the DOM
         var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -280,14 +310,45 @@
         var material = new THREE.MeshStandardMaterial({
             map: texture,
             displacementMap: displacementMap,
-            displacementScale: 0.03,
+            displacementScale: DEFAULT_DISPLACEMENT_SCALE,
+            displacementBias: DEFAULT_DISPLACEMENT_BIAS,
             bumpMap: displacementMap,
-            bumpScale: 1.35,
+            bumpScale: MOON_BUMP_SCALE,
             roughness: 1.0,
             metalness: 0.0,
-            emissive: new THREE.Color(0x223347),
-            emissiveIntensity: 0,
         });
+
+        // Black/white levels control via shader hook.
+        material.onBeforeCompile = (shader) => {
+            shader.uniforms.uMoonBlackPoint = { value: MOON_BLACK_POINT };
+            shader.uniforms.uMoonWhitePoint = { value: MOON_WHITE_POINT };
+            shader.uniforms.uMoonSaturation = { value: MOON_SATURATION };
+            shader.uniforms.uMoonVibrance = { value: MOON_VIBRANCE };
+
+            shader.fragmentShader = shader.fragmentShader.replace(
+                'void main() {',
+                'uniform float uMoonBlackPoint;\nuniform float uMoonWhitePoint;\nuniform float uMoonSaturation;\nuniform float uMoonVibrance;\nvoid main() {'
+            );
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <map_fragment>',
+                [
+                    '#include <map_fragment>',
+                    'float denom = max(0.0001, (uMoonWhitePoint - uMoonBlackPoint));',
+                    'diffuseColor.rgb = clamp((diffuseColor.rgb - uMoonBlackPoint) / denom, 0.0, 1.0);',
+                    '',
+                    '// Saturation + vibrance (approx)',
+                    'vec3 c = diffuseColor.rgb;',
+                    'float maxc = max(c.r, max(c.g, c.b));',
+                    'float minc = min(c.r, min(c.g, c.b));',
+                    'float satAmount = maxc - minc;',
+                    'float vibFactor = clamp(1.0 + uMoonVibrance * (1.0 - satAmount), 0.0, 3.0);',
+                    'float satFinal = clamp(uMoonSaturation * vibFactor, 0.0, 3.0);',
+                    'float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));',
+                    'diffuseColor.rgb = mix(vec3(luma), c, satFinal);'
+                ].join('\n')
+            );
+            (material as unknown as { userData: Record<string, unknown> }).userData.shader = shader;
+        };
 
         // Create a moon mesh
         var moon = new THREE.Mesh(geometry, material);
@@ -296,18 +357,15 @@
         // In normal mode, keep the Moon tidally locked (same face toward the camera/Earth).
         // This value is a texture-to-geometry alignment offset for the LROC texture.
         const MOON_BASE_ROTATION_Y = Math.PI / 2;
-        const DOGE_MOON_SPIN_SPEED = 0.0015;
 
         // Create a point light
-        const light = new THREE.DirectionalLight(0xffffff, 3.2);
+        const light = new THREE.DirectionalLight(0xffffff, LIGHT_INTENSITY);
         light.position.set(lightX, lightY, lightZ);
         scene.add(light.target);
         scene.add(light);
 
         // Party lighting (doge mode only)
         const partyLights: THREE.PointLight[] = [];
-        const partyLightIntensity = 9;
-        const partyLightDistance = 30;
         const partyLightPositions = [
             new THREE.Vector3(6, 2, 6),
             new THREE.Vector3(-6, -2, 6),
@@ -315,7 +373,7 @@
         ];
 
         for (let i = 0; i < partyLightPositions.length; i++) {
-            const partyLight = new THREE.PointLight(0xff00ff, partyLightIntensity, partyLightDistance);
+            const partyLight = new THREE.PointLight(0xff00ff, DOGE_PARTY_LIGHT_INTENSITY, DOGE_PARTY_LIGHT_DISTANCE);
             partyLight.position.copy(partyLightPositions[i]);
             partyLight.visible = false;
             scene.add(partyLight);
@@ -334,40 +392,85 @@
         const dogeTexture = new THREE.TextureLoader().load('./img/dogecoin.png');
         const dogeMaterial = new THREE.MeshPhongMaterial({ map: dogeTexture, shininess: 100, reflectivity: 0.8, specular: 0xDBBC57});
         
-        // Create an array to hold the particles and their positions
-        const randomNumbers: Array<{ direction: THREE.Vector3; rotation: number }> = [];
-        const particleCount = 1000; // Change this to the number of particles you want
-        const maxDistance = 1000;
-        const maxDistanceSquared = maxDistance * maxDistance;
+        type DogeParticleState = {
+            mesh: THREE.InstancedMesh;
+            random: Array<{ direction: THREE.Vector3; rotation: number }>;
+            maxDistanceSquared: number;
+            config: {
+                count: number;
+                maxDistance: number;
+                spawnRange: number;
+                speed: number;
+                rotationSpeed: number;
+                scale: number;
+            };
+        };
 
-        // Create the particles
-        const dogeParticles = new THREE.InstancedMesh(dogeGeometry, dogeMaterial, particleCount);
-        for (let i = 0; i < particleCount; i++) {
-            const position = new THREE.Vector3(Math.random() * 1000 - 500, Math.random() * 1000 - 500, Math.random() * 1000 - 500);
-            dogeParticles.setMatrixAt(i, new THREE.Matrix4().setPosition(position));
-            randomNumbers.push({
-                direction: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5),
-                rotation: Math.random() * 0.05 - 0.01 // Random rotation speed between -0.01 and 0.01
-            });
+        function createDogeParticlesState(): DogeParticleState {
+            const count = DOGE_PARTICLE_COUNT;
+            const spawnRange = DOGE_PARTICLE_SPAWN_RANGE;
+            const maxDistance = DOGE_PARTICLE_MAX_DISTANCE;
+            const speed = DOGE_PARTICLE_SPEED;
+            const rotationSpeed = DOGE_PARTICLE_ROTATION_SPEED;
+            const scale = DOGE_PARTICLE_SCALE;
+
+            const maxDistanceSquared = maxDistance * maxDistance;
+            const mesh = new THREE.InstancedMesh(dogeGeometry, dogeMaterial, count);
+            const random: Array<{ direction: THREE.Vector3; rotation: number }> = [];
+            const tmpMatrix = new THREE.Matrix4();
+            const tmpQuat = new THREE.Quaternion();
+            const tmpScale = new THREE.Vector3(scale, scale, scale);
+
+            for (let i = 0; i < count; i++) {
+                const half = spawnRange / 2;
+                const position = new THREE.Vector3(
+                    Math.random() * spawnRange - half,
+                    Math.random() * spawnRange - half,
+                    Math.random() * spawnRange - half
+                );
+                tmpMatrix.compose(position, tmpQuat, tmpScale);
+                mesh.setMatrixAt(i, tmpMatrix);
+
+                const direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+                // Avoid near-zero directions.
+                if (direction.lengthSq() < 1e-6) direction.set(1, 0, 0);
+                direction.normalize();
+
+                const rot = (Math.random() * 2 - 1) * rotationSpeed;
+                random.push({ direction, rotation: rot });
+            }
+
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.visible = false;
+            scene.add(mesh);
+
+            return {
+                mesh,
+                random,
+                maxDistanceSquared,
+                config: { count, maxDistance, spawnRange, speed, rotationSpeed, scale }
+            };
         }
-        scene.add(dogeParticles);
+
+        let dogeParticlesState: DogeParticleState = createDogeParticlesState();
 
         function animate() {
             requestAnimationFrame(animate);
 
+            light.intensity = LIGHT_INTENSITY;
             light.position.set(lightX, lightY, lightZ);
             // Keep the dark side barely visible like real photos (earthshine).
             material.emissiveIntensity = $doge ? 0 : earthshineIntensity;
 
             if ($doge) {
                 // Doge mode can spin around for fun.
-                moon.rotation.y += DOGE_MOON_SPIN_SPEED;
+                moon.rotation.y += DOGE_SPIN_SPEED;
             } else {
                 // Normal mode: show the correct Earth-facing side (no random rotation).
                 moon.rotation.set(
-                    MOON_ORIENTATION_ROT_X,
-                    MOON_BASE_ROTATION_Y + MOON_ORIENTATION_ROT_Y,
-                    MOON_ORIENTATION_ROT_Z
+                    degToRad(DEFAULT_ROT_X_DEG),
+                    MOON_BASE_ROTATION_Y + degToRad(DEFAULT_ROT_Y_DEG),
+                    degToRad(DEFAULT_ROT_Z_DEG)
                 );
             }
             material.map = $doge ? textureDoge : texture;
@@ -378,6 +481,8 @@
                 for (let i = 0; i < partyLights.length; i++) {
                     const partyLight = partyLights[i];
                     partyLight.visible = true;
+                    partyLight.intensity = DOGE_PARTY_LIGHT_INTENSITY;
+                    partyLight.distance = DOGE_PARTY_LIGHT_DISTANCE;
 
                     const hue = (t * 0.25 + i / partyLights.length) % 1;
                     partyLight.color.setHSL(hue, 1, 0.6);
@@ -398,33 +503,37 @@
 
             // Animate doge particles
             if ($doge) {
-                hemiLight.intensity = DogeHemisphereLightIntensity;
-                dogeParticles.visible = true;
-                for (let i = 0; i < particleCount; i++) {
+                hemiLight.intensity = DOGE_HEMI_INTENSITY;
+
+                dogeParticlesState.mesh.visible = true;
+                for (let i = 0; i < dogeParticlesState.config.count; i++) {
                     const matrix = new THREE.Matrix4();
-                    dogeParticles.getMatrixAt(i, matrix);
+                    dogeParticlesState.mesh.getMatrixAt(i, matrix);
                     const position = new THREE.Vector3().setFromMatrixPosition(matrix);
-                    position.add(randomNumbers[i].direction);
+                    position.addScaledVector(dogeParticlesState.random[i].direction, dogeParticlesState.config.speed);
 
                     // Check if the particle is too far from the origin
                     let distanceSquared = position.lengthSq();
-                    if (distanceSquared > maxDistanceSquared) {
+                    if (distanceSquared > dogeParticlesState.maxDistanceSquared) {
                         // Reverse the particle's direction
-                        randomNumbers[i].direction.negate();
+                        dogeParticlesState.random[i].direction.negate();
                     }
 
                     // Apply rotation
                     const rotation = new THREE.Euler().setFromRotationMatrix(matrix);
-                    rotation.x += randomNumbers[i].rotation;
-                    rotation.z += randomNumbers[i].rotation;
-                    rotation.y += randomNumbers[i].rotation;
+                    rotation.x += dogeParticlesState.random[i].rotation;
+                    rotation.z += dogeParticlesState.random[i].rotation;
+                    rotation.y += dogeParticlesState.random[i].rotation;
                     const quaternion = new THREE.Quaternion().setFromEuler(rotation);
-                    dogeParticles.setMatrixAt(i, matrix.compose(position, quaternion, new THREE.Vector3(1, 1, 1)));
+                    dogeParticlesState.mesh.setMatrixAt(
+                        i,
+                        matrix.compose(position, quaternion, new THREE.Vector3(dogeParticlesState.config.scale, dogeParticlesState.config.scale, dogeParticlesState.config.scale))
+                    );
                 }
-                dogeParticles.instanceMatrix.needsUpdate = true;
+                dogeParticlesState.mesh.instanceMatrix.needsUpdate = true;
             } else {
                 hemiLight.intensity = 0.008;
-                dogeParticles.visible = false;
+                dogeParticlesState.mesh.visible = false;
             }
 
             renderer.render(scene, camera);

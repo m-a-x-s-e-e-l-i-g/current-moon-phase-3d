@@ -5,9 +5,21 @@ import { toast } from 'svelte-sonner';
 export const latitude = writable(51.571915);
 export const longitude = writable(4.768323);
 export const hemisphere = writable('northern');
+
+// Temporary kill-switch for Doge mode.
+// Flip to true to re-enable the toggle and behavior.
+export const DOGE_MODE_ENABLED = false;
 export const doge = writable(false);
 
 doge.subscribe(value => {
+    if (!DOGE_MODE_ENABLED) {
+        if (value) {
+            doge.set(false);
+            toast("Doge mode is being reworked — coming back soon.");
+        }
+        return;
+    }
+
     toast(`Doge mode ${value ? 'enabled' : 'disabled'}`);
 });
 

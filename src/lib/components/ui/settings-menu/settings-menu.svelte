@@ -5,7 +5,7 @@
   import { DonateButton } from '$lib/components/ui/donate-button';
   import Icon from 'svelte-awesome';
   import gear from 'svelte-awesome/icons/gear';
-  import { doge } from '$lib/stores.js';
+  import { DOGE_MODE_ENABLED, doge } from '$lib/stores.js';
 </script>
 
 <Sheet.Root>
@@ -18,9 +18,16 @@
       <Sheet.Description>
       </Sheet.Description>
     </Sheet.Header>
-    <div class="flex" style="margin-top:2em;">
-      <Label class="flex-auto" for="doge">Doge mode</Label>
-      <Switch class="flex-none" id="doge" bind:checked={$doge}/>
+    <div style="margin-top:2em;">
+      <div class="flex">
+        <Label class="flex-auto" for="doge">Doge mode</Label>
+        <Switch class="flex-none" id="doge" bind:checked={$doge} disabled={!DOGE_MODE_ENABLED} />
+      </div>
+      {#if !DOGE_MODE_ENABLED}
+        <div style="margin-top:0.4rem; font-size:0.85rem; opacity:0.85;">
+          Doge mode is being reworked — coming back soon.
+        </div>
+      {/if}
     </div>
     <Sheet.Footer class="absolute bottom-5 left-5 right-5"> 
       <DonateButton/>
