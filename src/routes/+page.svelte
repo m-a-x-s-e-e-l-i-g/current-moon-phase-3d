@@ -156,7 +156,7 @@
     // Camera tuning
     const CAMERA_FOV_DEG = 0.5;
     const CAMERA_DISTANCE = 695;
-    const CAMERA_DISTANCE_MOBILE = 800; // Increased distance on mobile so moon fits screen
+    const CAMERA_DISTANCE_MOBILE = 1000; // Increased distance on mobile so moon fits screen
     const MOBILE_BREAKPOINT = 768; // px
 
     // Baked light settings
