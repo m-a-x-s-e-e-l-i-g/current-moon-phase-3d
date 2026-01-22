@@ -271,7 +271,9 @@
 
         // Helper function to get camera distance based on screen width
         function getCameraDistance(): number {
-            return window.innerWidth < MOBILE_BREAKPOINT ? CAMERA_DISTANCE_MOBILE : CAMERA_DISTANCE;
+            return (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT) 
+                ? CAMERA_DISTANCE_MOBILE 
+                : CAMERA_DISTANCE;
         }
 
         // Create a scene
