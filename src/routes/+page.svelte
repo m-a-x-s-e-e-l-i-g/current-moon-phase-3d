@@ -165,14 +165,18 @@
     const DOGE_HEMI_INTENSITY = 0.23;
     const DOGE_PARTY_LIGHT_INTENSITY = 50;
     const DOGE_PARTY_LIGHT_DISTANCE = 30;
+    const DOGE_INTRO_DURATION_MS = 900;
+    const DOGE_INTRO_SPINS = 2.5;
 
     // Doge particles (baked)
-    const DOGE_PARTICLE_COUNT = 1000;
-    const DOGE_PARTICLE_MAX_DISTANCE = 1000;
-    const DOGE_PARTICLE_SPAWN_RANGE = 1000;
-    const DOGE_PARTICLE_SPEED = 1.0;
-    const DOGE_PARTICLE_ROTATION_SPEED = 0.02;
-    const DOGE_PARTICLE_SCALE = 1.0;
+    const DOGE_PARTICLE_COUNT = 280;
+    const DOGE_PARTICLE_SPEED = 0.012;
+    const DOGE_PARTICLE_SPIN = 0.04;
+    const DOGE_PARTICLE_SCALE = 0.45;
+    const DOGE_PARTICLE_FRUSTUM_MARGIN = 0.88;
+    const DOGE_PARTICLE_DEPTH_MULT = 400.0;
+    const DOGE_PARTICLE_MOON_CLEARANCE = 0.8;
+    const DOGE_PARTICLE_RADIUS = 0.38;
 
     const degToRad = (deg: number) => (deg * Math.PI) / 180;
 
@@ -388,56 +392,110 @@
         scene.add(hemiLight);
 
         // Doge mode
-        const dogeGeometry = new THREE.CylinderGeometry(5, 5, 1, 60);
+        const dogeGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.08, 24);
         const dogeTexture = new THREE.TextureLoader().load('./img/dogecoin.png');
         const dogeMaterial = new THREE.MeshPhongMaterial({ map: dogeTexture, shininess: 100, reflectivity: 0.8, specular: 0xDBBC57});
         
+        type DogeParticle = {
+            position: THREE.Vector3;
+            velocity: THREE.Vector3;
+            rotation: THREE.Vector3;
+            spin: THREE.Vector3;
+        };
+
+        type DogeParticleBounds = {
+            halfW: number;
+            halfH: number;
+            halfD: number;
+        };
+
         type DogeParticleState = {
             mesh: THREE.InstancedMesh;
-            random: Array<{ direction: THREE.Vector3; rotation: number }>;
-            maxDistanceSquared: number;
+            particles: DogeParticle[];
+            bounds: DogeParticleBounds;
             config: {
                 count: number;
-                maxDistance: number;
-                spawnRange: number;
                 speed: number;
-                rotationSpeed: number;
                 scale: number;
+            };
+            tmp: {
+                matrix: THREE.Matrix4;
+                quat: THREE.Quaternion;
+                euler: THREE.Euler;
+                scale: THREE.Vector3;
             };
         };
 
+        function getParticleBounds(): DogeParticleBounds {
+            const viewHeight = 2 * Math.tan(degToRad(camera.fov / 2)) * camera.position.z;
+            const viewWidth = viewHeight * camera.aspect;
+            return {
+                halfW: (viewWidth * 0.5) * DOGE_PARTICLE_FRUSTUM_MARGIN,
+                halfH: (viewHeight * 0.5) * DOGE_PARTICLE_FRUSTUM_MARGIN,
+                halfD: Math.max(1.6, (viewHeight * 0.5) * DOGE_PARTICLE_DEPTH_MULT)
+            };
+        }
+
+        function randomInUnitSphere() {
+            let v = new THREE.Vector3();
+            do {
+                v.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+            } while (v.lengthSq() > 1 || v.lengthSq() < 1e-4);
+            return v;
+        }
+
+        function randomPointInEllipsoid(bounds: DogeParticleBounds) {
+            const v = randomInUnitSphere();
+            v.x *= bounds.halfW;
+            v.y *= bounds.halfH;
+            v.z *= bounds.halfD;
+            return v;
+        }
+
         function createDogeParticlesState(): DogeParticleState {
             const count = DOGE_PARTICLE_COUNT;
-            const spawnRange = DOGE_PARTICLE_SPAWN_RANGE;
-            const maxDistance = DOGE_PARTICLE_MAX_DISTANCE;
             const speed = DOGE_PARTICLE_SPEED;
-            const rotationSpeed = DOGE_PARTICLE_ROTATION_SPEED;
             const scale = DOGE_PARTICLE_SCALE;
+            const moonRadius = geometry.parameters?.radius ?? 2;
+            const minMoonDistance = moonRadius + DOGE_PARTICLE_MOON_CLEARANCE;
 
-            const maxDistanceSquared = maxDistance * maxDistance;
             const mesh = new THREE.InstancedMesh(dogeGeometry, dogeMaterial, count);
-            const random: Array<{ direction: THREE.Vector3; rotation: number }> = [];
+            const particles: DogeParticle[] = [];
+            const bounds = getParticleBounds();
+
             const tmpMatrix = new THREE.Matrix4();
             const tmpQuat = new THREE.Quaternion();
+            const tmpEuler = new THREE.Euler();
             const tmpScale = new THREE.Vector3(scale, scale, scale);
 
             for (let i = 0; i < count; i++) {
-                const half = spawnRange / 2;
-                const position = new THREE.Vector3(
-                    Math.random() * spawnRange - half,
-                    Math.random() * spawnRange - half,
-                    Math.random() * spawnRange - half
+                const position = randomPointInEllipsoid(bounds);
+                if (position.length() < minMoonDistance) {
+                    position.setLength(minMoonDistance);
+                }
+                const axis = randomInUnitSphere().normalize();
+                const velocity = position.clone().cross(axis);
+                if (velocity.lengthSq() < 1e-6) velocity.set(1, 0, 0);
+                velocity.normalize().multiplyScalar(speed);
+                velocity.z += (Math.random() * 2 - 1) * speed * 0.15;
+
+                const rotation = new THREE.Vector3(
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2
                 );
+                const spin = new THREE.Vector3(
+                    (Math.random() * 2 - 1) * DOGE_PARTICLE_SPIN,
+                    (Math.random() * 2 - 1) * DOGE_PARTICLE_SPIN,
+                    (Math.random() * 2 - 1) * DOGE_PARTICLE_SPIN
+                );
+
+                tmpEuler.set(rotation.x, rotation.y, rotation.z);
+                tmpQuat.setFromEuler(tmpEuler);
                 tmpMatrix.compose(position, tmpQuat, tmpScale);
                 mesh.setMatrixAt(i, tmpMatrix);
 
-                const direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
-                // Avoid near-zero directions.
-                if (direction.lengthSq() < 1e-6) direction.set(1, 0, 0);
-                direction.normalize();
-
-                const rot = (Math.random() * 2 - 1) * rotationSpeed;
-                random.push({ direction, rotation: rot });
+                particles.push({ position, velocity, rotation, spin });
             }
 
             mesh.instanceMatrix.needsUpdate = true;
@@ -446,13 +504,48 @@
 
             return {
                 mesh,
-                random,
-                maxDistanceSquared,
-                config: { count, maxDistance, spawnRange, speed, rotationSpeed, scale }
+                particles,
+                bounds,
+                config: { count, speed, scale },
+                tmp: { matrix: tmpMatrix, quat: tmpQuat, euler: tmpEuler, scale: tmpScale }
             };
         }
 
+        function resetDogeParticles(state: DogeParticleState) {
+            state.bounds = getParticleBounds();
+            const moonRadius = geometry.parameters?.radius ?? 2;
+            const minMoonDistance = moonRadius + DOGE_PARTICLE_MOON_CLEARANCE;
+            for (let i = 0; i < state.config.count; i++) {
+                const particle = state.particles[i];
+                particle.position.copy(randomPointInEllipsoid(state.bounds));
+                if (particle.position.length() < minMoonDistance) {
+                    particle.position.setLength(minMoonDistance);
+                }
+                const axis = randomInUnitSphere().normalize();
+                particle.velocity.copy(particle.position).cross(axis);
+                if (particle.velocity.lengthSq() < 1e-6) particle.velocity.set(1, 0, 0);
+                particle.velocity.normalize().multiplyScalar(state.config.speed);
+                particle.velocity.z += (Math.random() * 2 - 1) * state.config.speed * 0.15;
+                particle.rotation.set(
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2
+                );
+                particle.spin.set(
+                    (Math.random() * 2 - 1) * DOGE_PARTICLE_SPIN,
+                    (Math.random() * 2 - 1) * DOGE_PARTICLE_SPIN,
+                    (Math.random() * 2 - 1) * DOGE_PARTICLE_SPIN
+                );
+            }
+        }
+
         let dogeParticlesState: DogeParticleState = createDogeParticlesState();
+        let dogeParticlesActive = false;
+        let dogePrev = false;
+        let dogeIntroActive = false;
+        let dogeIntroStart = 0;
+        const dogeIntroFrom = new THREE.Euler(0, 0, 0);
+        let dogeSpinPhase = 0;
 
         function animate() {
             requestAnimationFrame(animate);
@@ -463,8 +556,34 @@
             material.emissiveIntensity = $doge ? 0 : earthshineIntensity;
 
             if ($doge) {
-                // Doge mode can spin around for fun.
-                moon.rotation.y += DOGE_SPIN_SPEED;
+                if (!dogePrev) {
+                    dogeIntroActive = true;
+                    dogeIntroStart = performance.now();
+                    dogeIntroFrom.copy(moon.rotation);
+                    dogeSpinPhase = moon.rotation.y;
+                }
+
+                if (dogeIntroActive) {
+                    const elapsed = performance.now() - dogeIntroStart;
+                    const t = Math.min(1, elapsed / DOGE_INTRO_DURATION_MS);
+                    const ease = t * t * (3 - 2 * t);
+                    const spin = ease * DOGE_INTRO_SPINS * Math.PI * 2;
+
+                    moon.rotation.set(
+                        THREE.MathUtils.lerp(dogeIntroFrom.x, 0, ease),
+                        THREE.MathUtils.lerp(dogeIntroFrom.y, 0, ease) + spin,
+                        THREE.MathUtils.lerp(dogeIntroFrom.z, 0, ease)
+                    );
+
+                    if (t >= 1) {
+                        dogeIntroActive = false;
+                        dogeSpinPhase = moon.rotation.y;
+                    }
+                } else {
+                    // Doge mode can spin around for fun.
+                    dogeSpinPhase += DOGE_SPIN_SPEED;
+                    moon.rotation.y = dogeSpinPhase;
+                }
             } else {
                 // Normal mode: show the correct Earth-facing side (no random rotation).
                 moon.rotation.set(
@@ -501,39 +620,89 @@
                 }
             }
 
+            dogePrev = $doge;
+
             // Animate doge particles
             if ($doge) {
                 hemiLight.intensity = DOGE_HEMI_INTENSITY;
 
-                dogeParticlesState.mesh.visible = true;
-                for (let i = 0; i < dogeParticlesState.config.count; i++) {
-                    const matrix = new THREE.Matrix4();
-                    dogeParticlesState.mesh.getMatrixAt(i, matrix);
-                    const position = new THREE.Vector3().setFromMatrixPosition(matrix);
-                    position.addScaledVector(dogeParticlesState.random[i].direction, dogeParticlesState.config.speed);
+                if (!dogeParticlesActive) {
+                    resetDogeParticles(dogeParticlesState);
+                    dogeParticlesActive = true;
+                }
 
-                    // Check if the particle is too far from the origin
-                    let distanceSquared = position.lengthSq();
-                    if (distanceSquared > dogeParticlesState.maxDistanceSquared) {
-                        // Reverse the particle's direction
-                        dogeParticlesState.random[i].direction.negate();
+                dogeParticlesState.mesh.visible = true;
+                const bounds = dogeParticlesState.bounds;
+                const tmp = dogeParticlesState.tmp;
+                const moonRadius = geometry.parameters?.radius ?? 2;
+                const minMoonDistance = moonRadius + DOGE_PARTICLE_MOON_CLEARANCE;
+                const minMoonDistanceSq = minMoonDistance * minMoonDistance;
+                const normal = new THREE.Vector3();
+                const collisionNormal = new THREE.Vector3();
+                const tmpVel = new THREE.Vector3();
+                const particleRadius = DOGE_PARTICLE_RADIUS;
+                const particleDiameter = particleRadius * 2;
+                const particleDiameterSq = particleDiameter * particleDiameter;
+                for (let i = 0; i < dogeParticlesState.config.count; i++) {
+                    const particle = dogeParticlesState.particles[i];
+                    particle.position.add(particle.velocity);
+
+                    if (particle.position.lengthSq() < minMoonDistanceSq) {
+                        normal.copy(particle.position);
+                        if (normal.lengthSq() < 1e-6) {
+                            normal.set(1, 0, 0);
+                        }
+                        normal.normalize();
+
+                        particle.position.copy(normal).multiplyScalar(minMoonDistance);
+                        const vDotN = particle.velocity.dot(normal);
+                        particle.velocity.addScaledVector(normal, -2 * vDotN);
+                        particle.velocity.multiplyScalar(0.98);
                     }
 
-                    // Apply rotation
-                    const rotation = new THREE.Euler().setFromRotationMatrix(matrix);
-                    rotation.x += dogeParticlesState.random[i].rotation;
-                    rotation.z += dogeParticlesState.random[i].rotation;
-                    rotation.y += dogeParticlesState.random[i].rotation;
-                    const quaternion = new THREE.Quaternion().setFromEuler(rotation);
-                    dogeParticlesState.mesh.setMatrixAt(
-                        i,
-                        matrix.compose(position, quaternion, new THREE.Vector3(dogeParticlesState.config.scale, dogeParticlesState.config.scale, dogeParticlesState.config.scale))
-                    );
+                    if (particle.position.x > bounds.halfW) particle.position.x = -bounds.halfW;
+                    if (particle.position.x < -bounds.halfW) particle.position.x = bounds.halfW;
+                    if (particle.position.y > bounds.halfH) particle.position.y = -bounds.halfH;
+                    if (particle.position.y < -bounds.halfH) particle.position.y = bounds.halfH;
+                    if (particle.position.z > bounds.halfD) particle.position.z = -bounds.halfD;
+                    if (particle.position.z < -bounds.halfD) particle.position.z = bounds.halfD;
+
+                    particle.rotation.add(particle.spin);
+                    tmp.euler.set(particle.rotation.x, particle.rotation.y, particle.rotation.z);
+                    tmp.quat.setFromEuler(tmp.euler);
+                    tmp.matrix.compose(particle.position, tmp.quat, tmp.scale);
+                    dogeParticlesState.mesh.setMatrixAt(i, tmp.matrix);
+                }
+
+                for (let i = 0; i < dogeParticlesState.config.count; i++) {
+                    const particle = dogeParticlesState.particles[i];
+                    for (let j = i + 1; j < dogeParticlesState.config.count; j++) {
+                        const other = dogeParticlesState.particles[j];
+                        collisionNormal.copy(particle.position).sub(other.position);
+                        const distSq = collisionNormal.lengthSq();
+                        if (distSq < particleDiameterSq && distSq > 1e-8) {
+                            const dist = Math.sqrt(distSq);
+                            collisionNormal.multiplyScalar(1 / dist);
+
+                            const overlap = (particleDiameter - dist) * 0.5;
+                            particle.position.addScaledVector(collisionNormal, overlap);
+                            other.position.addScaledVector(collisionNormal, -overlap);
+
+                            const relVel = tmpVel.copy(particle.velocity).sub(other.velocity);
+                            const sepVel = relVel.dot(collisionNormal);
+                            if (sepVel < 0) {
+                                const impulse = -sepVel;
+                                particle.velocity.addScaledVector(collisionNormal, impulse);
+                                other.velocity.addScaledVector(collisionNormal, -impulse);
+                            }
+                        }
+                    }
                 }
                 dogeParticlesState.mesh.instanceMatrix.needsUpdate = true;
             } else {
                 hemiLight.intensity = 0.008;
                 dogeParticlesState.mesh.visible = false;
+                dogeParticlesActive = false;
             }
 
             renderer.render(scene, camera);
@@ -545,6 +714,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            dogeParticlesState.bounds = getParticleBounds();
         }
 
         window.addEventListener("resize", onResize, false);
