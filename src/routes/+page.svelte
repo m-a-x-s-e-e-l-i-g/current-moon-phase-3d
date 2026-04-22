@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+        import { onMount } from "svelte";
     import * as THREE from "three";
     import SunCalc from 'suncalc';
     import { GithubCorner } from '$lib/components/ui/github-corner';
@@ -128,16 +128,13 @@
     }
 
     // Time selector state
-    let selectedDate: Date = new Date();
-    let phaseEvents: PhaseEvent[] = [];
-    let useLiveNow = true;
-    let anchorTimeMs = Date.now();
-    let timeOffsetHours = 0; // relative to anchorTimeMs (when not live)
-    let nowMs = Date.now();
+    let useLiveNow = $state(true);
+    let anchorTimeMs = $state(Date.now());
+    let timeOffsetHours = $state(0); // relative to anchorTimeMs (when not live)
+    let nowMs = $state(Date.now());
+    let selectedDate: Date = $derived(new Date((useLiveNow ? nowMs : anchorTimeMs) + timeOffsetHours * MS_PER_HOUR));
+    let phaseEvents: PhaseEvent[] = $derived(computePhaseEvents(selectedDate));
 
-    // selectedDate must be driven by a reactive value; Date.now() alone won't re-run.
-    $: selectedDate = new Date((useLiveNow ? nowMs : anchorTimeMs) + timeOffsetHours * MS_PER_HOUR);
-    $: phaseEvents = computePhaseEvents(selectedDate);
 
     // Fixed orientation + lens (baked settings)
     const DEFAULT_ROT_X_DEG = -72.4;
@@ -194,20 +191,19 @@
         { start: 0.77, end: 1.0, phase: "Waning Crescent", emoji: { northern: "🌘", southern: "🌒" } }
     ];
 
-    let hemiKey: Hemisphere = 'northern';
-    $: hemiKey = $hemisphere === 'southern' ? 'southern' : 'northern';
+    let hemiKey: Hemisphere = $derived($hemisphere === 'southern' ? 'southern' : 'northern');
 
-    let moonPhase: MoonPhase = moonPhases[0],
-        moonAgePercent: number, // Percentage of the moon's current age
-        moonDistance: string, // Distance to the moon in kilometers
-        moonPhasePercent: string, // How much of the moon is illuminated
-        moonIlluminationAngle: number, // angle: midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive
-        earthshineIntensity: number, // faint earth-lit glow on the dark side
-        lightX: number, // X coordinate of the direct light source
-        lightY: number, // Y coordinate of the direct light source
-        lightZ: number, // Z coordinate of the direct light source
-        hemisphereFactor: number, // 1 for northern hemisphere, -1 for southern hemisphere
-        waxingFactor: number; // -1 for waxing, 1 for waning
+    let moonPhase: MoonPhase = $state(moonPhases[0]);
+    let moonAgePercent = $state(0); // Percentage of the moon's current age
+    let moonDistance = $state(''); // Distance to the moon in kilometers
+    let moonPhasePercent = $state(''); // How much of the moon is illuminated
+    let moonIlluminationAngle = $state(0); // angle: midpoint angle in radians of the illuminated limb of the moon reckoned eastward from the north point of the disk; the moon is waxing if the angle is negative, and waning if positive
+    let earthshineIntensity = $state(0); // faint earth-lit glow on the dark side
+    let lightX = $state(0); // X coordinate of the direct light source
+    let lightY = $state(0); // Y coordinate of the direct light source
+    let lightZ = $state(0); // Z coordinate of the direct light source
+    let hemisphereFactor = $state(1); // 1 for northern hemisphere, -1 for southern hemisphere
+    let waxingFactor = $state(1); // -1 for waxing, 1 for waning
 
     function updateMoonProperties() {
         const illumination = getMoonIllumination(selectedDate);
@@ -256,13 +252,13 @@
     }
 
     // Keep properties in sync with time/location/hemisphere.
-    $: {
+    $effect(() => {
         selectedDate;
         $latitude;
         $longitude;
         $hemisphere;
         updateMoonProperties();
-    }
+    });
 
     onMount(() => {
         getLocation();
@@ -869,7 +865,7 @@
                         type="datetime-local"
                         step="60"
                         value={toDateTimeLocalValue(selectedDate)}
-                        on:change={onDateTimeLocalChange}
+                        onchange={onDateTimeLocalChange}
                     />
                     {#if useLiveNow}
                         <span>(Live)</span>
@@ -880,7 +876,7 @@
                         <input
                             type="checkbox"
                             bind:checked={useLiveNow}
-                            on:change={() => {
+                            onchange={() => {
                                 if (useLiveNow) {
                                     nowMs = Date.now();
                                     timeOffsetHours = 0;
@@ -894,7 +890,7 @@
                     </label>
                     <button
                         style="color:#fff;border:1px solid rgba(255,255,255,0.25);padding:0.25rem 0.6rem;border-radius:0.4rem;"
-                        on:click={() => {
+                        onclick={() => {
                             useLiveNow = true;
                             nowMs = Date.now();
                             timeOffsetHours = 0;
@@ -910,7 +906,7 @@
                 max="720"
                 step="1"
                 bind:value={timeOffsetHours}
-                on:input={() => {
+                oninput={() => {
                     if (useLiveNow) {
                         useLiveNow = false;
                         anchorTimeMs = Date.now();

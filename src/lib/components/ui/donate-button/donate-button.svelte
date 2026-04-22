@@ -2,8 +2,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "$lib/components/ui/button";
   import { toast } from "svelte-sonner";
-  import Icon from 'svelte-awesome';
-  import paypal from 'svelte-awesome/icons/paypal';
+  import { ExternalLink } from 'lucide-svelte';
 
   const dogecoinAddress = "D7bWW2idUMeL3DyFJ4RauPXiZCKdfP5yXv";
   const cardanoAddress = "addr1qx0gnjhp4d092k3zjevfwu892kqspvy20rjlc7dyv4lqh7y7389wr26724dz99jcjacw24vpqzcg5789l3u6get7p0uq6zt7u4";
@@ -15,7 +14,7 @@
     try {
       await navigator.clipboard.writeText(text);
       toast("Address copied to clipboard");
-    } catch (err) {
+    } catch {
       toast.error("Failed to copy address to clipboard");
     }
   }
@@ -23,32 +22,34 @@
 
 <div class="absolute left-0 bottom-0">
   <DropdownMenu.Root>
-    <DropdownMenu.Trigger asChild let:builder>
-      <Button builders={[builder]} variant="outline">Feed me 🥩</Button>
+    <DropdownMenu.Trigger>
+      {#snippet child({ props })}
+        <Button {...props} variant="outline">Feed me 🥩</Button>
+      {/snippet}
     </DropdownMenu.Trigger>
     <DropdownMenu.Content class="w-56">
       <DropdownMenu.Group>
-        <DropdownMenu.Item on:click={() => copyToClipboard(dogecoinAddress)}>
+        <DropdownMenu.Item onclick={() => copyToClipboard(dogecoinAddress)}>
           Dogecoin
           <DropdownMenu.Shortcut>Ð</DropdownMenu.Shortcut>
         </DropdownMenu.Item>
-        <DropdownMenu.Item on:click={() => copyToClipboard(cardanoAddress)}>
+        <DropdownMenu.Item onclick={() => copyToClipboard(cardanoAddress)}>
           Cardano
           <DropdownMenu.Shortcut>₳</DropdownMenu.Shortcut>
         </DropdownMenu.Item>
-        <DropdownMenu.Item on:click={() => copyToClipboard(ethereumAddress)}>
+        <DropdownMenu.Item onclick={() => copyToClipboard(ethereumAddress)}>
           Ethereum
           <DropdownMenu.Shortcut>Ξ</DropdownMenu.Shortcut>
         </DropdownMenu.Item>
-        <DropdownMenu.Item on:click={() => copyToClipboard(bitcoinAddress)}>
+        <DropdownMenu.Item onclick={() => copyToClipboard(bitcoinAddress)}>
           Bitcoin
           <DropdownMenu.Shortcut>₿</DropdownMenu.Shortcut>
         </DropdownMenu.Item>
       </DropdownMenu.Group>
-      <DropdownMenu.Separator />    
-      <DropdownMenu.Item on:click={() => window.open(paypalAddress, '_blank')}>
-        <a href="{paypalAddress}" target="_blank" rel="noreferrer">PayPal</a>
-        <DropdownMenu.Shortcut><Icon data={paypal} scale={0.6}/></DropdownMenu.Shortcut>
+      <DropdownMenu.Separator />
+      <DropdownMenu.Item onclick={() => window.open(paypalAddress, '_blank', 'noopener,noreferrer')}>
+        PayPal
+        <DropdownMenu.Shortcut><ExternalLink size={14} /></DropdownMenu.Shortcut>
       </DropdownMenu.Item>
     </DropdownMenu.Content>
   </DropdownMenu.Root>

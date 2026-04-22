@@ -1,13 +1,17 @@
 <script lang="ts">
-	import { Dialog as SheetPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils";
+import type { Snippet } from "svelte";
+import { Dialog as SheetPrimitive } from "bits-ui";
+import { cn } from "$lib/utils";
 
-	type $$Props = SheetPrimitive.DescriptionProps;
+interface Props {
+class?: string;
+children?: Snippet;
+[key: string]: any;
+}
 
-	let className: $$Props["class"] = undefined;
-	export { className as class };
+let { class: className = undefined, children, ...rest }: Props = $props();
 </script>
 
-<SheetPrimitive.Description class={cn("text-sm text-muted-foreground", className)} {...$$restProps}>
-	<slot />
+<SheetPrimitive.Description class={cn("text-sm text-muted-foreground", className)} {...rest}>
+{@render children?.()}
 </SheetPrimitive.Description>
