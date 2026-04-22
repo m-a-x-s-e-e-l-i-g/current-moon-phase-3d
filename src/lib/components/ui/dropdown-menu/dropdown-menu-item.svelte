@@ -1,31 +1,25 @@
 <script lang="ts">
-	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils";
+import type { Snippet } from "svelte";
+import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
+import { cn } from "$lib/utils";
 
-	type $$Props = DropdownMenuPrimitive.ItemProps & {
-		inset?: boolean;
-	};
-	type $$Events = DropdownMenuPrimitive.ItemEvents;
+interface Props {
+class?: string;
+inset?: boolean;
+children?: Snippet;
+[key: string]: any;
+}
 
-	let className: $$Props["class"] = undefined;
-	export let inset: $$Props["inset"] = undefined;
-	export { className as class };
+let { class: className = undefined, inset = false, children, ...rest }: Props = $props();
 </script>
 
 <DropdownMenuPrimitive.Item
-	class={cn(
-		"relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50",
-		inset && "pl-8",
-		className
-	)}
-	on:click
-	on:keydown
-	on:focusin
-	on:focusout
-	on:pointerdown
-	on:pointerleave
-	on:pointermove
-	{...$$restProps}
+class={cn(
+"relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50",
+inset && "pl-8",
+className
+)}
+{...rest}
 >
-	<slot />
+{@render children?.()}
 </DropdownMenuPrimitive.Item>

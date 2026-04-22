@@ -1,25 +1,30 @@
 <script lang="ts">
-	import { Button as ButtonPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils";
-	import { buttonVariants, type Props, type Events } from ".";
+import type { Snippet } from "svelte";
+import { Button as ButtonPrimitive } from "bits-ui";
+import { cn } from "$lib/utils";
+import { buttonVariants } from ".";
 
-	type $$Props = Props;
-	type $$Events = Events;
+interface Props {
+class?: string;
+variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+size?: "default" | "sm" | "lg" | "icon";
+children?: Snippet;
+[key: string]: any;
+}
 
-	let className: $$Props["class"] = undefined;
-	export let variant: $$Props["variant"] = "default";
-	export let size: $$Props["size"] = "default";
-	export let builders: $$Props["builders"] = [];
-	export { className as class };
+let {
+class: className = undefined,
+variant = "default",
+size = "default",
+children,
+...rest
+}: Props = $props();
 </script>
 
 <ButtonPrimitive.Root
-	{builders}
-	class={cn(buttonVariants({ variant, size, className }))}
-	type="button"
-	{...$$restProps}
-	on:click
-	on:keydown
+class={cn(buttonVariants({ variant, size, className }))}
+type="button"
+{...rest}
 >
-	<slot />
+{@render children?.()}
 </ButtonPrimitive.Root>

@@ -1,14 +1,27 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import type { Snippet } from 'svelte';
 
-    export let className = '';
-    export let threshold = 0.12;
-    export let rootMargin = '0px 0px -10% 0px';
+    interface Props {
+        className?: string;
+        threshold?: number;
+        rootMargin?: string;
+        children?: Snippet;
+    }
 
-    let node: HTMLElement;
-    let inview = false;
+    let {
+        className = '',
+        threshold = 0.12,
+        rootMargin = '0px 0px -10% 0px',
+        children
+    }: Props = $props();
+
+    let node = $state<HTMLElement | undefined>(undefined);
+    let inview = $state(false);
 
     onMount(() => {
+        if (!node) return;
+
         const observer = new IntersectionObserver(
             ([entry]) => {
                 inview = entry.isIntersecting;
@@ -23,7 +36,7 @@
 </script>
 
 <div bind:this={node} class={`reveal ${className}`} class:inview={inview}>
-    <slot />
+    {@render children?.()}
 </div>
 
 <style>

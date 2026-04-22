@@ -1,19 +1,21 @@
 <script lang="ts">
-	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils";
+import type { Snippet } from "svelte";
+import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
+import { cn } from "$lib/utils";
 
-	type $$Props = DropdownMenuPrimitive.LabelProps & {
-		inset?: boolean;
-	};
+interface Props {
+class?: string;
+inset?: boolean;
+children?: Snippet;
+[key: string]: any;
+}
 
-	let className: $$Props["class"] = undefined;
-	export let inset: $$Props["inset"] = undefined;
-	export { className as class };
+let { class: className = undefined, inset = false, children, ...rest }: Props = $props();
 </script>
 
-<DropdownMenuPrimitive.Label
-	class={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
-	{...$$restProps}
+<DropdownMenuPrimitive.GroupHeading
+class={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
+{...rest}
 >
-	<slot />
-</DropdownMenuPrimitive.Label>
+{@render children?.()}
+</DropdownMenuPrimitive.GroupHeading>
