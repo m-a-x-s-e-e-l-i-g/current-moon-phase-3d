@@ -1,7 +1,7 @@
 <script lang="ts">
         import { onMount } from "svelte";
     import * as THREE from "three";
-    import SunCalc from 'suncalc';
+    import { getMoonIllumination, getMoonPosition } from 'suncalc';
     import { GithubCorner } from '$lib/components/ui/github-corner';
     import { SettingsMenu } from '$lib/components/ui/settings-menu';
     import { DogeSong } from '$lib/components/ux/doge-song';
@@ -9,8 +9,6 @@
     import { hemisphere, doge, latitude, longitude } from '$lib/stores.js';
     import { getLocation } from '$lib/location.js';
     import { Toaster } from "$lib/components/ui/sonner";
-
-    const { getMoonIllumination, getMoonPosition } = SunCalc;
 
     type Hemisphere = 'northern' | 'southern';
     type MoonPhase = { start: number; end: number; phase: string; emoji: { northern: string; southern: string } };
@@ -212,7 +210,7 @@
         moonAgePercent = Number(illumination.phase.toFixed(2));
         moonPhase = moonPhases.find(phase => moonAgePercent >= phase.start && moonAgePercent < phase.end) ?? moonPhases[0];
         moonPhasePercent = (illumination.fraction * 100).toFixed(2) + "%";
-        moonIlluminationAngle = illumination.angle;
+        moonIlluminationAngle = THREE.MathUtils.degToRad(illumination.angle);
         moonDistance = Math.round(moonPos.distance).toLocaleString() + " kilometers";
 
         hemisphereFactor = $hemisphere === "northern" ? 1 : -1;
@@ -235,7 +233,7 @@
         // SunCalc's illumination.angle is measured eastward from the north point.
         // On the sky, east is to the *left* when north is up, so we flip X.
         // Adjust by the parallactic angle so the limb matches the user's local "up".
-        let limbAngle = illumination.angle - moonPos.parallacticAngle;
+        let limbAngle = moonIlluminationAngle - THREE.MathUtils.degToRad(moonPos.parallacticAngle);
 
         // Southern hemisphere: the Moon appears flipped (roughly a 180° rotation).
         if ($hemisphere === "southern") limbAngle += Math.PI;
