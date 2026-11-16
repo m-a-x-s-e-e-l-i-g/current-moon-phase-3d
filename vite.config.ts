@@ -1,6 +1,14 @@
+import adapter from '@sveltejs/adapter-netlify';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [sveltekit()]
+	plugins: [
+		sveltekit({
+			adapter: adapter({ publish: 'build' }),
+			alias: { $lib: 'src/lib' },
+			preprocess: vitePreprocess()
+		})
+	]
 });
